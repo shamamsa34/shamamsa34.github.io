@@ -274,7 +274,7 @@ const Mock = (() => {
     lessons:[
       {id:'L1',section:'قبطي',title:'الحروف القبطية من ⲁ إلى ⲑ',videoUrl:'https://www.youtube.com/watch?v=XXXXXXXXXXX',description:'اتفرج على الفيديو كويس وركّز على اسم كل حرف وشكله.',order:1,active:true,questions:[
         {question:'الحرف ⲃ اسمه إيه؟',raw:['ألفا','ڤيدا','غما','دلتا'],correctN:2},
-        {question:'الحرف ⲇ اسمه إيه؟',raw:['دلتا','زيتا','إيتا','',''],correctN:1},
+        {question:'الحرف ⲇ اسمه إيه؟',raw:['دلتا','زيتا','إيتا','',''],correctN:1,videoUrl:'https://youtu.be/XXXXXXXXXXX'},
         {question:'أنهي حرف اسمه زيتا؟',raw:['ⲉ','ⲏ','ⲍ','ⲑ'],correctN:3},
         {question:'الحرف ⲁ اسمه إيه؟',raw:['ألفا','ڤيدا','',''],correctN:1}]},
       {id:'L2',section:'قبطي',title:'كلمات بنقولها في الكنيسة',videoUrl:'',description:'كلمات قبطية بنسمعها كل قداس. اعرف معناها.',order:2,active:true,questions:[
@@ -293,7 +293,7 @@ const Mock = (() => {
   const seed = [['k5','L1',4],['k5','L2',3],['k5','L3',2],['k1','L1',4],['k1','L2',2],['k6','L1',3],['k6','L4',2],['k2','L1',2],['k7','L3',2],['k3','L2',3]];
   seed.forEach(([k,l,s],i)=>{const kid=db.kids.find(x=>x.id===k), ls=db.lessons.find(x=>x.id===l);
     db.results.push({timestamp:new Date(Date.now()-(i+1)*36e5).toISOString(),kidId:k,kidName:kid.name,class:kid.class,section:ls.section,lessonId:l,lessonTitle:ls.title,score:s,total:ls.questions.length})});
-  const shape = l => ({...l, questions:l.questions.map(q=>{const options=[];let correct=-1;q.raw.forEach((t,i)=>{if(String(t||'').trim()){if(i+1===q.correctN)correct=options.length;options.push(t)}});return {question:q.question,options,correct,raw:q.raw.concat(['','','','']).slice(0,4),correctN:q.correctN}})});
+  const shape = l => ({...l, questions:l.questions.map(q=>{const options=[];let correct=-1;q.raw.forEach((t,i)=>{if(String(t||'').trim()){if(i+1===q.correctN)correct=options.length;options.push(t)}});return {question:q.question,options,correct,raw:q.raw.concat(['','','','']).slice(0,4),correctN:q.correctN,videoUrl:q.videoUrl||''}})});
   const lessons = all => db.lessons.filter(l=>all||l.active).map(shape).sort((a,b)=>a.order-b.order);
   const auth = pw => { if(String(pw)!==db.pw) throw new Error('كلمة السر غلط'); };
   const adminData = () => ({kids:db.kids, lessons:lessons(true), results:db.results.slice().reverse(), rules:db.rules, sheetUrl:'', xlsxUrl:''});
@@ -306,7 +306,7 @@ const Mock = (() => {
       return {score,total:l.questions.length}; },
     getLeaderboard(){ return {rows:leaderboardFrom(db.kids, db.results, db.rules), rules:db.rules}; },
     adminGetData(pw){ auth(pw); return adminData(); },
-    adminSaveLesson(pw,l){ auth(pw); const id=l.id||('L'+Date.now()); const row={id,section:l.section,title:l.title,videoUrl:l.videoUrl,description:l.description,order:l.order||db.lessons.length+1,active:l.active,questions:l.questions.map(q=>({question:q.question,raw:q.raw,correctN:q.correctN}))};
+    adminSaveLesson(pw,l){ auth(pw); const id=l.id||('L'+Date.now()); const row={id,section:l.section,title:l.title,videoUrl:l.videoUrl,description:l.description,order:l.order||db.lessons.length+1,active:l.active,questions:l.questions.map(q=>({question:q.question,raw:q.raw,correctN:q.correctN,videoUrl:q.videoUrl||''}))};
       const i=db.lessons.findIndex(x=>x.id===id); if(i>=0){row.order=db.lessons[i].order;db.lessons[i]=row}else db.lessons.push(row); return adminData(); },
     adminDeleteLesson(pw,id){ auth(pw); db.lessons=db.lessons.filter(l=>l.id!==id); return adminData(); },
     adminAddKids(pw,names,cls){ auth(pw); names.forEach(n=>db.kids.push({id:'k'+Math.random().toString(36).slice(2,8),name:n,class:cls,active:true})); return adminData(); },
@@ -447,7 +447,7 @@ function showLesson(id){
       <h2 class="title-xl" style="margin-top:6px">${esc(l.title)}</h2>${l.description?`<p class="lead">${esc(l.description)}</p>`:''}</div>
     ${videoHTML(l.videoUrl)}
     <div id="quizArea" style="display:flex;justify-content:center">
-      ${l.questions.length?`<button type="button" class="btn btn-red btn-big" id="startQ">خلصت الفيديو؟ يلا نجاوب ←</button>`:'<p class="muted">الدرس ده مفيهوش أسئلة لسه.</p>'}
+      ${l.questions.length?`<button type="button" class="btn btn-red btn-big" id="startQ">${l.videoUrl?'خلصت الفيديو؟ يلا نجاوب ←':'يلا نبدأ ←'}</button>`:'<p class="muted">الدرس ده مفيهوش أسئلة لسه.</p>'}
     </div></section>`;
   $('#bk').onclick=()=>showSection(l.section);
   const st=$('#startQ'); if(st) st.onclick=()=>{ drawQuestion(); $('#quizArea').scrollIntoView({behavior:'smooth',block:'start'}); };
@@ -459,6 +459,7 @@ function drawQuestion(){
   $('#quizArea').style.display='block';
   $('#quizArea').innerHTML=`<div class="card quiz">
     <div class="row" style="justify-content:space-between"><span class="muted">سؤال ${Q.i+1} من ${l.questions.length}</span><div class="dots">${dots}</div></div>
+    ${q.videoUrl?`<div class="view" style="gap:8px">${videoHTML(q.videoUrl)}<p class="muted" style="margin:0">▶ اتفرج على الفيديو وبعدين جاوب</p></div>`:''}
     <div class="q">${esc(q.question)}</div>
     <div class="opts">${q.options.map((o,i)=>`<button type="button" class="opt" data-i="${i}"><span class="k">${AR[i]}</span><span>${esc(o)}</span></button>`).join('')}</div>
     <div id="fb"></div></div>`;
@@ -592,7 +593,7 @@ function paneLessons(d){
   pane.innerHTML=`<div class="view">
     <div class="row" style="justify-content:space-between"><p class="muted" style="margin:0">${d.lessons.length} درس</p><button type="button" class="btn btn-red" id="newL">+ درس جديد</button></div>
     ${SECTIONS.map(s=>{const ls=d.lessons.filter(l=>l.section===s.key); return `<div class="card view" style="gap:10px"><h3 style="color:var(--blue)">${s.title}</h3>
-      ${ls.length?`<div class="alist">${ls.map(l=>`<div class="aitem"><div class="grow"><b>${esc(l.title)}</b><br><span class="hint">${l.questions.length} أسئلة · ${l.videoUrl?'فيه فيديو':'من غير فيديو'}</span></div>
+      ${ls.length?`<div class="alist">${ls.map(l=>`<div class="aitem"><div class="grow"><b>${esc(l.title)}</b><br><span class="hint">${l.questions.length} أسئلة · ${l.videoUrl?'فيه فيديو للدرس':'من غير فيديو للدرس'}${(n=>n?` · ${n} ${n===1?'سؤال فيه':'أسئلة فيها'} فيديو`:'')(l.questions.filter(q=>q.videoUrl).length)}</span></div>
         ${l.active?'':'<span class="tag off">مخفي</span>'}<button type="button" class="mini" data-edit="${esc(l.id)}">تعديل</button><button type="button" class="mini del" data-del="${esc(l.id)}">حذف</button></div>`).join('')}</div>`:'<p class="muted" style="margin:0">مفيش دروس لسه.</p>'}</div>`}).join('')}
   </div>`;
   $('#newL').onclick=()=>editLesson(null);
@@ -600,10 +601,10 @@ function paneLessons(d){
   pane.querySelectorAll('[data-del]').forEach(b=>twoStep(b,'متأكد؟ اضغط تاني',async()=>{
     try{ await adminCall('adminDeleteLesson',b.dataset.del); toast('اتحذف الدرس'); showAdmin('lessons'); }catch(e){ toast(e); } }));
 }
-function blankQ(){ return {question:'',raw:['','','',''],correctN:1}; }
+function blankQ(){ return {question:'',raw:['','','',''],correctN:1,videoUrl:''}; }
 function editLesson(l){
   const L = l ? JSON.parse(JSON.stringify({id:l.id,section:l.section,title:l.title,videoUrl:l.videoUrl,description:l.description,active:l.active,
-      questions:l.questions.map(q=>({question:q.question,raw:(q.raw||q.options).concat(['','','','']).slice(0,4),correctN:q.correctN||q.correct+1}))}))
+      questions:l.questions.map(q=>({question:q.question,raw:(q.raw||q.options).concat(['','','','']).slice(0,4),correctN:q.correctN||q.correct+1,videoUrl:q.videoUrl||''}))}))
     : {id:'',section:SECTIONS[0].key,title:'',videoUrl:'',description:'',active:true,questions:[blankQ()]};
   const pane=$('#pane');
   const draw=()=>{
@@ -621,6 +622,7 @@ function editLesson(l){
       <div class="view" style="gap:12px" id="qs">${L.questions.map((q,i)=>`<div class="qcard">
         <div class="qhead"><b>سؤال ${i+1}</b><button type="button" class="mini del" data-rq="${i}" ${L.questions.length<2?'disabled':''}>حذف السؤال</button></div>
         <textarea class="inp" id="q${i}" data-q="${i}" placeholder="اكتب السؤال…" style="min-height:56px">${esc(q.question)}</textarea>
+        <div class="field"><label for="qv${i}" style="font-weight:500;font-size:.85rem">🎬 فيديو للسؤال ده (اختياري)</label><input class="inp" id="qv${i}" dir="ltr" value="${esc(q.videoUrl||'')}" placeholder="https://youtu.be/… (سيبه فاضي لو مفيش)"></div>
         ${q.raw.map((o,j)=>`<div class="optrow"><input type="radio" name="c${i}" id="c${i}_${j}" value="${j+1}" ${q.correctN===j+1?'checked':''} aria-label="الإجابة الصح"><input class="inp" id="o${i}_${j}" data-o="${i}_${j}" value="${esc(o)}" placeholder="اختيار ${AR[j]}${j>1?' (اختياري)':''}"></div>`).join('')}
       </div>`).join('')}</div>
       <button type="button" class="btn btn-soft" id="addQ" style="align-self:flex-start">+ سؤال كمان</button>
@@ -640,7 +642,7 @@ function editLesson(l){
   };
   const sync=()=>{
     L.section=$('#fSec').value; L.title=$('#fTitle').value.trim(); L.videoUrl=$('#fVid').value.trim(); L.description=$('#fDesc').value.trim(); L.active=$('#fAct').checked;
-    L.questions.forEach((q,i)=>{ q.question=$('#q'+i).value.trim(); q.raw=q.raw.map((_,j)=>$('#o'+i+'_'+j).value.trim());
+    L.questions.forEach((q,i)=>{ q.question=$('#q'+i).value.trim(); q.videoUrl=$('#qv'+i).value.trim(); q.raw=q.raw.map((_,j)=>$('#o'+i+'_'+j).value.trim());
       const c=pane.querySelector(`input[name="c${i}"]:checked`); q.correctN=c?Number(c.value):1; });
   };
   const validate=()=>{
