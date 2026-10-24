@@ -104,6 +104,12 @@ main{padding-block:28px 48px}
 .video{position:relative;aspect-ratio:16/9;max-width:100%;border-radius:var(--r);overflow:hidden;background:var(--blue-d)}
 .video iframe,.video video{position:absolute;inset:0;width:100%;height:100%;border:0}
 .video.drive{aspect-ratio:4/3}
+.video video{background:#000;object-fit:contain}
+.vfb{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:16px;color:#fff;background:#0b1a3a center/cover no-repeat;text-decoration:none}
+.vfb::before{content:"";position:absolute;inset:0;background:rgba(10,20,50,.55)}
+.vfb>*{position:relative}
+.vfb .play{width:78px;height:78px;border-radius:50%;background:var(--red);display:grid;place-items:center}
+.vfb b{font-size:1.1rem}
 .video:fullscreen{border-radius:0;aspect-ratio:auto;width:100%;height:100%}
 .video:-webkit-full-screen{border-radius:0;width:100%;height:100%}
 .vwrap{display:flex;flex-direction:column;gap:8px}
@@ -359,19 +365,36 @@ function goTop(){ window.scrollTo({top:0,behavior:'smooth'}); }
 function videoEmbed(url){
   url=(url||'').trim(); let m;
   if ((m=url.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([\w-]{11})/))) return {kind:'yt',src:'https://www.youtube.com/embed/'+m[1]+'?rel=0&modestbranding=1&playsinline=1'};
-  if ((m=url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=)([\w-]+)/))) return {kind:'drive',src:'https://drive.google.com/file/d/'+m[1]+'/preview'};
+  if ((m=url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=)([\w-]+)/))) return {kind:'drive',id:m[1],src:'https://drive.google.com/file/d/'+m[1]+'/preview'};
   if (/\.(mp4|webm)(\?|$)/i.test(url)) return {kind:'file',src:url};
   return url ? {kind:'link',src:url} : null;
 }
 function videoHTML(url){
   const v=videoEmbed(url);
   if (!v) return '';
+  if (LIVE && v.kind==='drive') {
+    const thumb='https://drive.google.com/thumbnail?id='+encodeURIComponent(v.id)+'&sz=w1000';
+    const view='https://drive.google.com/file/d/'+encodeURIComponent(v.id)+'/view';
+    return `<div class="vwrap"><div class="video drive"><video controls playsinline preload="metadata" poster="${esc(thumb)}" data-view="${esc(view)}" data-thumb="${esc(thumb)}"
+      src="${esc('https://drive.google.com/uc?export=download&id='+encodeURIComponent(v.id))}"></video></div>
+    <div class="vtools"><button type="button" data-fs>⛶ ملو الشاشة</button><a href="${esc(view)}" target="_blank" rel="noopener">افتح في Drive</a></div></div>`;
+  }
   if (LIVE && (v.kind==='yt'||v.kind==='drive')) return `<div class="vwrap"><div class="video ${v.kind}"><iframe src="${esc(v.src)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen title="فيديو"></iframe></div>
     <div class="vtools"><button type="button" data-fs>⛶ ملو الشاشة</button><a href="${esc(url)}" target="_blank" rel="noopener">${v.kind==='drive'?'افتح في Drive':'افتح في YouTube'}</a></div></div>`;
   if (v.kind==='file') return `<div class="video"><video src="${esc(v.src)}" controls playsinline></video></div>`;
   return `<div class="video"><div class="vph"><div class="play"><svg width="30" height="30" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></div>
     <b>الفيديو هيشتغل هنا في الموقع الحقيقي</b><a href="${esc(url)}" target="_blank" rel="noopener">افتح الفيديو في صفحة جديدة</a></div></div>`;
 }
+
+/* Drive refused to stream the file: show a big button that opens it in Drive instead */
+document.addEventListener('error', e => {
+  const vd = e.target;
+  if (!vd || vd.tagName !== 'VIDEO' || !vd.dataset.view) return;
+  const box = vd.parentElement;
+  box.innerHTML = `<a class="vfb" href="${esc(vd.dataset.view)}" target="_blank" rel="noopener" style="background-image:url('${esc(vd.dataset.thumb)}')">
+    <span class="play"><svg width="34" height="34" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></span>
+    <b>دوس هنا عشان تشغّل الفيديو</b><span style="font-size:.9rem;opacity:.9">هيفتح في Drive، وبعد ما تخلص ارجع هنا وجاوب</span></a>`;
+}, true);
 
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-fs]'); if (!b) return;
