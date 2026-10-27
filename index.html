@@ -79,7 +79,7 @@ main{padding-block:28px 48px}
 .name small{display:block;color:var(--muted);font-weight:500;font-size:.8rem}
 
 /* home sections */
-.sections{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.sections{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
 .sec{border:0;border-radius:24px;padding:22px 20px;text-align:right;color:var(--paper);display:flex;flex-direction:column;gap:6px;min-height:190px;position:relative;overflow:hidden;transition:transform .15s}
 .sec:hover{transform:translateY(-3px)}
 .sec .glyph{font-size:2.6rem;line-height:1;margin-bottom:auto}
@@ -189,7 +189,44 @@ textarea.inp{min-height:80px;resize:vertical}
 footer{text-align:center;padding-block:10px 30px;color:var(--muted);font-size:.85rem}
 footer button{border:0;background:none;color:var(--muted);text-decoration:underline;font-size:.85rem}
 
+/* alhan, recorder, points */
+.sec-navy{background:var(--blue-d)}
+.tag.navy{background:var(--blue-d);color:var(--paper)}
+.media-audio{background:var(--blue-l);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:10px;color:var(--blue)}
+.media-audio audio{width:100%}
+.mload{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:10px;color:var(--paper)}
+.mload .spin{border-color:rgba(255,255,255,.25);border-top-color:var(--paper)}
+.rec{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;padding:16px 8px}
+.micbtn{width:96px;height:96px;border-radius:50%;border:0;background:var(--red);display:grid;place-items:center;transition:transform .12s}
+.micbtn:active{transform:scale(.95)}
+.micbtn.on{animation:pulse 1.4s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(225,38,45,.45)}70%{box-shadow:0 0 0 22px rgba(225,38,45,0)}100%{box-shadow:0 0 0 0 rgba(225,38,45,0)}}
+.timer{font-family:var(--f-display);font-size:2.2rem;color:var(--red);font-variant-numeric:tabular-nums;line-height:1}
+.legend{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.legend span{background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:5px 14px;font-size:.9rem;font-weight:700}
+.legend b{color:var(--red);margin-inline-start:4px}
+.chips.start{justify-content:flex-start}
+.chip.cat b{color:var(--red);margin-inline-start:4px}
+.chip.cat[aria-pressed="true"]{background:var(--red);border-color:var(--red);color:var(--paper)}
+.chip.cat[aria-pressed="true"] b{color:var(--paper)}
+.grid3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px}
+.kgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
+.kc{display:flex;gap:8px;align-items:center;border:2px solid var(--line);border-radius:12px;padding:8px 10px;cursor:pointer;font-weight:700;background:var(--paper)}
+.kc:has(input:checked){border-color:var(--blue);background:var(--blue-l)}
+.kc input{width:20px;height:20px;accent-color:var(--blue);flex:none}
+.kc small{display:block;color:var(--muted);font-weight:500;font-size:.78rem}
+.qbtns{display:flex;gap:4px;justify-content:flex-end}
+.qbtns .mini{min-width:44px}
+.pts-pos{color:var(--ok)} .pts-neg{color:var(--red)}
+.badge{background:var(--red);color:var(--paper);border-radius:999px;padding:0 7px;font-size:.75rem;margin-inline-start:4px}
+.tabs{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:thin}
+.tab{white-space:nowrap}
+a.mini{text-decoration:none;display:inline-flex;align-items:center}
+.stats4{grid-template-columns:repeat(4,1fr)}
 @media (max-width:760px){
+  .grid3{grid-template-columns:1fr 1fr}
+  .grid3 .field:first-child{grid-column:1/-1}
+  .stats4{grid-template-columns:1fr 1fr}
   .sections{grid-template-columns:1fr}
   .sec{min-height:130px}
   .lessons{grid-template-columns:1fr}
@@ -225,11 +262,17 @@ const GAS = !!(window.google && google.script && google.script.run);
 const API_URL = 'https://script.google.com/macros/s/AKfycbxyqmdPwEFzzaEg7jvLKY5nM769NQz-t9sWJ0cr5gKMIQ7aUhs5KWnVUmMZeSKVcyynew/exec';
 const REMOTE = !GAS && /^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(API_URL);
 const LIVE = GAS || REMOTE;
+const RECITE = 'الحان';
+const BONUS_KEY = 'حصة';
 const SECTIONS = [
   {key:'قبطي', title:'القبطي', sub:'حروف وكلمات ومردات بالقبطي', glyph:'<span class="cop">ⲁⲃⲅ</span>', cls:'sec-red'},
-  {key:'طقس',  title:'الطقس',  sub:'ألحان القداس وخدمة الشماس', glyph:'☩', cls:'sec-blue'}
+  {key:'طقس',  title:'الطقس',  sub:'طقس القداس وخدمة الشماس', glyph:'☩', cls:'sec-blue'},
+  {key:RECITE, title:'الألحان', sub:'اسمع اللحن وسمّعه بصوتك', glyph:'♪', cls:'sec-navy', recite:true}
 ];
+const secTitle = k => k===BONUS_KEY ? 'نقط الحصة' : (SECTIONS.find(s=>s.key===k)?.title || k);
 const CLASSES = ['تالتة','رابعة'];
+const MAX_REC_SECS = 300;
+const MAX_UPLOAD = 18*1024*1024;
 
 function api(fn, ...args){
   if (REMOTE) return remote(fn, args);
@@ -250,105 +293,101 @@ async function remote(fn, args){
 
 /* Demo backend: used only when the page is opened outside Google Apps Script */
 const Mock = (() => {
+  const KIDS = [["كارلوس أيمن سعد", "رابعة"],["مارتن مارك", "رابعة"],["كاراس رفيق فخري", "رابعة"],["يوساب سعيد راشد", "رابعة"],["جوناثان وائل عوض الله", "رابعة"],["افرايم شريف كمال", "رابعة"],["فادى جورج نعيم", "رابعة"],["نوفير وليد ماهر", "رابعة"],["كاراس شادي صليب", "رابعة"],["جيسون البير صموئيل", "رابعة"],["كارلوس ميلاد مجدالله", "رابعة"],["شربل ماجد وجيه غبريال", "رابعة"],["فيلوباتير عماد يوسف", "رابعة"],["كيفين عماد اسحق", "تالتة"],["كاراس ريمون حليم", "تالتة"],["بولا هاني سعد", "تالتة"],["كريم رامي رضا", "تالتة"],["ايفان بيتر", "تالتة"],["كريس ميلاد خليل", "تالتة"],["جون جرجس كمال", "تالتة"],["نوفير ميخائيل سليمان", "تالتة"],["كيفين عماد فوزي", "تالتة"],["ماتيوس هاني ملاك", "تالتة"],["بينجامين نادي مكرم", "تالتة"],["نوفير ماجد فتحي", "تالتة"],["جورج ريمون ماهر", "تالتة"],["دانيال بيشوي موريس", "تالتة"],["مارتن مهاب ممدوح", "تالتة"],["كريل مجدي", "تالتة"]];
   const db = {
-    pw:'1234', rules:{solve:5,correct:0,full:0},
-    kids:[
-      {id:'k1',name:'كارلوس أيمن سعد',class:'رابعة',active:true},
-      {id:'k2',name:'مارتن مارك',class:'رابعة',active:true},
-      {id:'k3',name:'كاراس رفيق فخري',class:'رابعة',active:true},
-      {id:'k4',name:'يوساب سعيد راشد',class:'رابعة',active:true},
-      {id:'k5',name:'جوناثان وائل عوض الله',class:'رابعة',active:true},
-      {id:'k6',name:'افرايم شريف كمال',class:'رابعة',active:true},
-      {id:'k7',name:'فادى جورج نعيم',class:'رابعة',active:true},
-      {id:'k8',name:'نوفير وليد ماهر',class:'رابعة',active:true},
-      {id:'k9',name:'كاراس شادي صليب',class:'رابعة',active:true},
-      {id:'k10',name:'جيسون البير صموئيل',class:'رابعة',active:true},
-      {id:'k11',name:'كارلوس ميلاد مجدالله',class:'رابعة',active:true},
-      {id:'k12',name:'شربل ماجد وجيه غبريال',class:'رابعة',active:true},
-      {id:'k13',name:'فيلوباتير عماد يوسف',class:'رابعة',active:true},
-      {id:'k14',name:'كيفين عماد اسحق',class:'تالتة',active:true},
-      {id:'k15',name:'كاراس ريمون حليم',class:'تالتة',active:true},
-      {id:'k16',name:'بولا هاني سعد',class:'تالتة',active:true},
-      {id:'k17',name:'كريم رامي رضا',class:'تالتة',active:true},
-      {id:'k18',name:'ايفان بيتر',class:'تالتة',active:true},
-      {id:'k19',name:'كريس ميلاد خليل',class:'تالتة',active:true},
-      {id:'k20',name:'جون جرجس كمال',class:'تالتة',active:true},
-      {id:'k21',name:'نوفير ميخائيل سليمان',class:'تالتة',active:true},
-      {id:'k22',name:'كيفين عماد فوزي',class:'تالتة',active:true},
-      {id:'k23',name:'ماتيوس هاني ملاك',class:'تالتة',active:true},
-      {id:'k24',name:'بينجامين نادي مكرم',class:'تالتة',active:true},
-      {id:'k25',name:'نوفير ماجد فتحي',class:'تالتة',active:true},
-      {id:'k26',name:'جورج ريمون ماهر',class:'تالتة',active:true},
-      {id:'k27',name:'دانيال بيشوي موريس',class:'تالتة',active:true},
-      {id:'k28',name:'مارتن مهاب ممدوح',class:'تالتة',active:true},
-      {id:'k29',name:'كريل مجدي',class:'تالتة',active:true}
-    ],
+    pw:'1234', rules:{solve:5,correct:0,full:0,recite:15},
+    cats:[{name:'حضور القداس',points:20},{name:'حضور الحصة',points:10},{name:'تسميع لحن الأسبوع',points:15},{name:'man of the day',points:10},{name:'تفاعل في الحصة',points:1}],
+    kids: KIDS.map((k,i)=>({id:'k'+(i+1),name:k[0],class:k[1],active:true})),
     lessons:[
       {id:'L1',section:'قبطي',title:'الحروف القبطية من ⲁ إلى ⲑ',videoUrl:'https://www.youtube.com/watch?v=XXXXXXXXXXX',description:'اتفرج على الفيديو كويس وركّز على اسم كل حرف وشكله.',order:1,active:true,questions:[
         {question:'الحرف ⲃ اسمه إيه؟',raw:['ألفا','ڤيدا','غما','دلتا'],correctN:2},
-        {question:'الحرف ⲇ اسمه إيه؟',raw:['دلتا','زيتا','إيتا','',''],correctN:1,videoUrl:'https://youtu.be/XXXXXXXXXXX'},
-        {question:'أنهي حرف اسمه زيتا؟',raw:['ⲉ','ⲏ','ⲍ','ⲑ'],correctN:3},
-        {question:'الحرف ⲁ اسمه إيه؟',raw:['ألفا','ڤيدا','',''],correctN:1}]},
+        {question:'الحرف ⲇ اسمه إيه؟',raw:['دلتا','زيتا','إيتا',''],correctN:1,videoUrl:'https://youtu.be/XXXXXXXXXXX'},
+        {question:'أنهي حرف اسمه زيتا؟',raw:['ⲉ','ⲏ','ⲍ','ⲑ'],correctN:3}]},
       {id:'L2',section:'قبطي',title:'كلمات بنقولها في الكنيسة',videoUrl:'',description:'كلمات قبطية بنسمعها كل قداس. اعرف معناها.',order:2,active:true,questions:[
         {question:'كلمة ⲭⲉⲣⲉ معناها إيه؟',raw:['السلام لكِ','آمين','يارب ارحم','هلليلويا'],correctN:1},
-        {question:'كلمة ⲁⲙⲏⲛ معناها إيه؟',raw:['هلليلويا','آمين','السلام','قدوس'],correctN:2},
-        {question:'ⲕⲩⲣⲓⲉ ⲉⲗⲉⲏⲥⲟⲛ معناها؟',raw:['يارب ارحم','المجد لك','قدوس','آمين'],correctN:1}]},
+        {question:'كلمة ⲁⲙⲏⲛ معناها إيه؟',raw:['هلليلويا','آمين','السلام','قدوس'],correctN:2}]},
       {id:'L3',section:'طقس',title:'ملابس الشماس',videoUrl:'',description:'نتعرف على التونية والبطرشيل ومعنى كل واحد.',order:3,active:true,questions:[
         {question:'الشماس بيلبس إيه فوق التونية؟',raw:['البطرشيل','الشملة','العمامة',''],correctN:1},
         {question:'لون التونية بتاعة الشماس غالبًا؟',raw:['أحمر','أبيض','أسود','أخضر'],correctN:2}]},
-      {id:'L4',section:'طقس',title:'مردات القداس',videoUrl:'',description:'لما الكاهن يقول حاجة، الشعب يرد بإيه؟',order:4,active:true,questions:[
-        {question:'لما الكاهن يقول «السلام لجميعكم» الشعب يرد بإيه؟',raw:['ولروحك أيضًا','آمين','هلليلويا','يارب ارحم'],correctN:1},
-        {question:'«آمين» معناها إيه؟',raw:['يارب ارحم','حقًا / ليكن','قدوس','المجد'],correctN:2}]}
+      {id:'L5',section:RECITE,title:'لحن الأسبوع: تين أو أوشت',videoUrl:'https://youtu.be/XXXXXXXXXXX',description:'اسمع اللحن كذا مرة، وبعدين سجّل وإنت بتقوله.',order:5,active:true,questions:[]}
     ],
-    results:[]
+    results:[], bonus:[], recordings:[], recData:{}
   };
-  const seed = [['k5','L1',4],['k5','L2',3],['k5','L3',2],['k1','L1',4],['k1','L2',2],['k6','L1',3],['k6','L4',2],['k2','L1',2],['k7','L3',2],['k3','L2',3]];
-  seed.forEach(([k,l,s],i)=>{const kid=db.kids.find(x=>x.id===k), ls=db.lessons.find(x=>x.id===l);
-    db.results.push({timestamp:new Date(Date.now()-(i+1)*36e5).toISOString(),kidId:k,kidName:kid.name,class:kid.class,section:ls.section,lessonId:l,lessonTitle:ls.title,score:s,total:ls.questions.length})});
-  const shape = l => ({...l, questions:l.questions.map(q=>{const options=[];let correct=-1;q.raw.forEach((t,i)=>{if(String(t||'').trim()){if(i+1===q.correctN)correct=options.length;options.push(t)}});return {question:q.question,options,correct,raw:q.raw.concat(['','','','']).slice(0,4),correctN:q.correctN,videoUrl:q.videoUrl||''}})});
+  const T = (h) => new Date(Date.now()-h*36e5).toISOString();
+  const kid = id => db.kids.find(k=>k.id===id);
+  [['k6','L1',3,5],['k6','L2',2,9],['k11','L1',3,7],['k23','L3',2,4],['k1','L1',2,30],['k28','L2',1,20]].forEach(([k,l,s,h])=>{const ls=db.lessons.find(x=>x.id===l);
+    db.results.push({timestamp:T(h),kidId:k,kidName:kid(k).name,class:kid(k).class,section:ls.section,lessonId:l,lessonTitle:ls.title,score:s,total:ls.questions.length});});
+  const day = (n)=>new Date(Date.now()-n*864e5).toLocaleDateString('en-CA');
+  let bid=0;
+  [['k6','حضور القداس',20,6],['k6','حضور الحصة',10,6],['k11','حضور القداس',20,6],['k23','حضور القداس',20,6],['k1','حضور الحصة',10,6],['k28','حضور القداس',20,6],
+   ['k18','حضور الحصة',10,6],['k4','حضور القداس',20,6],['k6','تفاعل في الحصة',1,6],['k23','man of the day',10,6]].forEach(([k,r,p,n])=>
+    db.bonus.push({id:'b'+(++bid),timestamp:T(n*24),date:day(n),kidId:k,kidName:kid(k).name,class:kid(k).class,reason:r,points:p}));
+  const shape = l => ({...l, recite:l.section===RECITE, questions:(l.section===RECITE?[]:l.questions).map(q=>{const options=[];let correct=-1;q.raw.forEach((t,i)=>{if(String(t||'').trim()){if(i+1===q.correctN)correct=options.length;options.push(t)}});return {question:q.question,options,correct,raw:q.raw.concat(['','','','']).slice(0,4),correctN:q.correctN,videoUrl:q.videoUrl||''}})});
   const lessons = all => db.lessons.filter(l=>all||l.active).map(shape).sort((a,b)=>a.order-b.order);
   const auth = pw => { if(String(pw)!==db.pw) throw new Error('كلمة السر غلط'); };
-  const adminData = () => ({kids:db.kids, lessons:lessons(true), results:db.results.slice().reverse(), rules:db.rules, sheetUrl:'', xlsxUrl:''});
+  const adminData = () => ({kids:db.kids, lessons:lessons(true), results:db.results.slice().reverse(), bonus:db.bonus.slice().reverse(),
+    recordings:db.recordings.slice().reverse(), rules:db.rules, cats:db.cats, today:new Date().toLocaleDateString('en-CA'), sheetUrl:'', xlsxUrl:''});
   return {
     getPublicData(){ return {kids:db.kids.filter(k=>k.active), lessons:lessons(false), rules:db.rules}; },
     getKidProgress(kidId){ const o={}; db.results.filter(r=>r.kidId===kidId).forEach(r=>{const b=o[r.lessonId]; if(!b||r.score>b.score) o[r.lessonId]={score:r.score,total:r.total}}); return o; },
-    submitResult(p){ const kid=db.kids.find(k=>k.id===p.kidId), l=lessons(true).find(x=>x.id===p.lessonId); let score=0;
+    submitResult(p){ const k=kid(p.kidId), l=lessons(true).find(x=>x.id===p.lessonId); let score=0;
       l.questions.forEach((q,i)=>{const a=p.answers.find(x=>x.q===i); if(a&&a.chosen===q.correct) score++;});
-      db.results.push({timestamp:new Date().toISOString(),kidId:kid.id,kidName:kid.name,class:kid.class,section:l.section,lessonId:l.id,lessonTitle:l.title,score,total:l.questions.length});
+      db.results.push({timestamp:new Date().toISOString(),kidId:k.id,kidName:k.name,class:k.class,section:l.section,lessonId:l.id,lessonTitle:l.title,score,total:l.questions.length});
       return {score,total:l.questions.length}; },
-    getLeaderboard(){ return {rows:leaderboardFrom(db.kids, db.results, db.rules), rules:db.rules}; },
+    getMedia(){ throw new Error('demo'); },
+    saveRecording(p){ const k=kid(p.kidId), l=lessons(true).find(x=>x.id===p.lessonId); const id='r'+Date.now();
+      db.recData[id]={mime:p.mime,data:p.data};
+      db.recordings.push({id,timestamp:new Date().toISOString(),kidId:k.id,kidName:k.name,class:k.class,lessonId:l.id,lessonTitle:l.title,seconds:p.seconds,heard:false,fileUrl:''});
+      db.results.push({timestamp:new Date().toISOString(),kidId:k.id,kidName:k.name,class:k.class,section:l.section,lessonId:l.id,lessonTitle:l.title,score:1,total:1});
+      return {points:db.rules.recite}; },
+    getLeaderboard(){ return {rows:leaderboardFrom(db.kids, db.results, db.rules, db.bonus), rules:db.rules, cats:db.cats}; },
     adminGetData(pw){ auth(pw); return adminData(); },
-    adminSaveLesson(pw,l){ auth(pw); const id=l.id||('L'+Date.now()); const row={id,section:l.section,title:l.title,videoUrl:l.videoUrl,description:l.description,order:l.order||db.lessons.length+1,active:l.active,questions:l.questions.map(q=>({question:q.question,raw:q.raw,correctN:q.correctN,videoUrl:q.videoUrl||''}))};
+    adminSaveLesson(pw,l){ auth(pw); const id=l.id||('L'+Date.now()); const row={id,section:l.section,title:l.title,videoUrl:l.videoUrl,description:l.description,order:l.order||db.lessons.length+1,active:l.active,questions:(l.questions||[]).map(q=>({question:q.question,raw:q.raw,correctN:q.correctN,videoUrl:q.videoUrl||''}))};
       const i=db.lessons.findIndex(x=>x.id===id); if(i>=0){row.order=db.lessons[i].order;db.lessons[i]=row}else db.lessons.push(row); return adminData(); },
     adminDeleteLesson(pw,id){ auth(pw); db.lessons=db.lessons.filter(l=>l.id!==id); return adminData(); },
-    adminAddKids(pw,names,cls){ auth(pw); names.forEach(n=>db.kids.push({id:'k'+Math.random().toString(36).slice(2,8),name:n,class:cls,active:true})); return adminData(); },
-    adminRemoveKid(pw,id){ auth(pw); const k=db.kids.find(x=>x.id===id); if(k) k.active=false; return adminData(); },
-    adminSavePoints(pw,r){ auth(pw); ['solve','correct','full'].forEach(k=>db.rules[k]=Math.max(0,Math.round(Number(r[k])||0))); return adminData(); },
-    adminChangePassword(pw,np){ auth(pw); db.pw=np; return true; }
+    adminAddKids(pw,names,cls){ auth(pw); const ex=new Set(db.kids.filter(k=>k.active).map(k=>k.name)); names.filter(n=>!ex.has(n)).forEach(n=>db.kids.push({id:'k'+Math.random().toString(36).slice(2,8),name:n,class:cls,active:true})); return adminData(); },
+    adminRemoveKid(pw,id){ auth(pw); const k=kid(id); if(k) k.active=false; return adminData(); },
+    adminUpdateKid(pw,id,name,cls){ auth(pw); const k=kid(id); if(!k) throw new Error('الاسم ده مش موجود'); if(!String(name||'').trim()) throw new Error('اكتب الاسم'); k.name=String(name).trim(); if(cls) k.class=cls; return adminData(); },
+    adminSavePoints(pw,r){ auth(pw); ['solve','correct','full','recite'].forEach(k=>db.rules[k]=Math.max(0,Math.round(Number(r[k])||0))); return adminData(); },
+    adminChangePassword(pw,np){ auth(pw); db.pw=np; return true; },
+    adminAddBonus(pw,ids,reason,points,date){ auth(pw); const p=Math.round(Number(points)); if(!p) throw new Error('اكتب عدد النقط');
+      const ks=ids.map(kid).filter(Boolean); if(!ks.length) throw new Error('اختار طفل واحد على الأقل');
+      ks.forEach(k=>db.bonus.push({id:'b'+(++bid),timestamp:new Date().toISOString(),date:date||day(0),kidId:k.id,kidName:k.name,class:k.class,reason:reason||'نقط الحصة',points:p})); return adminData(); },
+    adminDeleteBonus(pw,id){ auth(pw); db.bonus=db.bonus.filter(b=>b.id!==id); return adminData(); },
+    adminSaveCategories(pw,c){ auth(pw); db.cats=c.filter(x=>x.name&&Number(x.points)).map(x=>({name:x.name,points:Math.round(Number(x.points))})); return adminData(); },
+    adminGetRecording(pw,id){ auth(pw); const r=db.recData[id]; if(!r) throw new Error('التسجيل ده مش موجود'); return r; },
+    adminMarkRecording(pw,id,h){ auth(pw); const r=db.recordings.find(x=>x.id===id); if(r) r.heard=!!h; return adminData(); },
+    adminUploadMedia(pw){ auth(pw); return {url:'https://drive.google.com/file/d/DEMOFILE123/view'}; }
   };
 })();
 
-/* Same scoring rule as the server: best attempt per kid per lesson */
-function lessonPoints(rules, score, total){ return rules.solve + rules.correct*score + (total&&score===total?rules.full:0); }
-function leaderboardFrom(kids, results, rules){
-  const byId={}; kids.forEach(k=>byId[String(k.id)]=k);
+/* Same scoring rule as the server */
+function lessonPoints(rules, score, total, section){
+  if (section===RECITE) return rules.recite||0;
+  return rules.solve + rules.correct*score + (total&&score===total?rules.full:0);
+}
+function leaderboardFrom(kids, results, rules, bonus){
+  const t={};
+  kids.filter(k=>k.active!==false).forEach(k=>t[String(k.id)]={kidId:String(k.id),name:String(k.name),class:String(k.class),points:0,lessons:0,bonus:0,bySection:{}});
   const best={};
   results.forEach(r=>{const key=r.kidId+'|'+r.lessonId, s=Number(r.score)||0; if(!best[key]||s>best[key].score) best[key]={kidId:String(r.kidId),section:String(r.section),score:s,total:Number(r.total)||0}});
-  const t={};
-  Object.values(best).forEach(b=>{const k=byId[b.kidId]; if(!k) return;
-    const o=t[b.kidId]||(t[b.kidId]={kidId:b.kidId,name:String(k.name),class:String(k.class),points:0,lessons:0,bySection:{}});
-    const p=lessonPoints(rules,b.score,b.total); o.points+=p; o.lessons++; o.bySection[b.section]=(o.bySection[b.section]||0)+p;});
+  Object.values(best).forEach(b=>{const o=t[b.kidId]; if(!o) return;
+    const p=lessonPoints(rules,b.score,b.total,b.section); o.points+=p; o.lessons++; o.bySection[b.section]=(o.bySection[b.section]||0)+p;});
+  (bonus||[]).forEach(x=>{const o=t[String(x.kidId)]; if(!o) return; const p=Number(x.points)||0;
+    o.points+=p; o.bonus+=p; o.bySection[BONUS_KEY]=(o.bySection[BONUS_KEY]||0)+p;});
   return Object.values(t);
 }
 
 /* ===================== HELPERS ===================== */
-const nq=n=>`${n} ${n>=3&&n<=10?'نقط':'نقطة'}`;
+const nq=n=>`${n} ${Math.abs(n)>=3&&Math.abs(n)<=10?'نقط':'نقطة'}`;
+const signed=n=>(n>0?'+':'')+n;
 function rulesText(r){
   const parts=[];
   if(r.solve) parts.push(`${r.solve} نقط لحل الدرس`);
   if(r.correct) parts.push(`${r.correct} ${r.correct===1?'نقطة':'نقط'} لكل إجابة صح`);
   if(r.full) parts.push(`${r.full} نقط زيادة للدرجة النهائية`);
-  return (parts.join(' + ')||'مفيش نقط متحددة')+' · كل درس بيتحسب مرة واحدة (أحسن محاولة)';
+  if(r.recite) parts.push(`${r.recite} نقطة لتسميع اللحن`);
+  return (parts.join(' · ')||'')+' — كل درس بيتحسب مرة واحدة';
 }
 const $ = s => document.querySelector(s);
 const app = $('#app');
@@ -361,41 +400,77 @@ const store = {
 function toast(msg){ const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2600); }
 function loading(){ app.innerHTML='<div class="loading"><div class="spin"></div>جاري التحميل…</div>'; }
 function goTop(){ window.scrollTo({top:0,behavior:'smooth'}); }
+const fmtTime=t=>{const x=new Date(t); return isNaN(x)?'':x.toLocaleDateString('ar-EG',{day:'numeric',month:'short'})+' '+x.toLocaleTimeString('ar-EG',{hour:'numeric',minute:'2-digit'});};
+const fmtDay=d=>{const x=new Date(String(d)+'T12:00:00'); return isNaN(x)?String(d||''):x.toLocaleDateString('ar-EG',{weekday:'short',day:'numeric',month:'short'});};
+const fmtSecs=s=>{s=Math.max(0,Math.round(s||0)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');};
+function b64ToBlob(b64, mime){
+  const bin=atob(b64), n=bin.length, arr=new Uint8Array(n);
+  for(let i=0;i<n;i++) arr[i]=bin.charCodeAt(i);
+  return new Blob([arr],{type:mime||'application/octet-stream'});
+}
+function blobToB64(blob){
+  return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(String(r.result).split(',')[1]||''); r.onerror=()=>rej('ما قدرناش نقرا الملف'); r.readAsDataURL(blob); });
+}
+const ICON_MIC='<svg width="40" height="40" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg>';
+const ICON_STOP='<svg width="36" height="36" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
 
+/* ===================== MEDIA (YouTube / Drive / files) ===================== */
 function videoEmbed(url){
   url=(url||'').trim(); let m;
   if ((m=url.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([\w-]{11})/))) return {kind:'yt',src:'https://www.youtube.com/embed/'+m[1]+'?rel=0&modestbranding=1&playsinline=1'};
-  if ((m=url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=)([\w-]+)/))) return {kind:'drive',id:m[1],src:'https://drive.google.com/file/d/'+m[1]+'/preview'};
-  if (/\.(mp4|webm)(\?|$)/i.test(url)) return {kind:'file',src:url};
+  if ((m=url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:.*&)?id=)([\w-]+)/))) return {kind:'drive',id:m[1],src:'https://drive.google.com/file/d/'+m[1]+'/preview'};
+  if (/\.(mp4|webm|mp3|m4a|ogg|wav)(\?|$)/i.test(url)) return {kind:'file',src:url,audio:/\.(mp3|m4a|ogg|wav)(\?|$)/i.test(url)};
   return url ? {kind:'link',src:url} : null;
 }
-function videoHTML(url){
+/* ctx = {lesson, q} lets the server send a Drive file so it plays inside the page */
+function videoHTML(url, ctx){
   const v=videoEmbed(url);
   if (!v) return '';
   if (LIVE && v.kind==='drive') {
-    const thumb='https://drive.google.com/thumbnail?id='+encodeURIComponent(v.id)+'&sz=w1000';
     const view='https://drive.google.com/file/d/'+encodeURIComponent(v.id)+'/view';
-    return `<div class="vwrap"><div class="video drive"><video controls playsinline preload="metadata" poster="${esc(thumb)}" data-view="${esc(view)}" data-thumb="${esc(thumb)}"
-      src="${esc('https://drive.google.com/uc?export=download&id='+encodeURIComponent(v.id))}"></video></div>
+    const m=esc(JSON.stringify({l:ctx?ctx.lesson:'',q:ctx?ctx.q:-1,id:v.id}));
+    return `<div class="vwrap" data-media="${m}"><div class="video drive"><div class="mload"><div class="spin"></div><span>جاري التحميل…</span></div></div>
     <div class="vtools"><button type="button" data-fs>⛶ ملو الشاشة</button><a href="${esc(view)}" target="_blank" rel="noopener">افتح في Drive</a></div></div>`;
   }
-  if (LIVE && (v.kind==='yt'||v.kind==='drive')) return `<div class="vwrap"><div class="video ${v.kind}"><iframe src="${esc(v.src)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen title="فيديو"></iframe></div>
-    <div class="vtools"><button type="button" data-fs>⛶ ملو الشاشة</button><a href="${esc(url)}" target="_blank" rel="noopener">${v.kind==='drive'?'افتح في Drive':'افتح في YouTube'}</a></div></div>`;
-  if (v.kind==='file') return `<div class="video"><video src="${esc(v.src)}" controls playsinline></video></div>`;
+  if (LIVE && v.kind==='yt') return `<div class="vwrap"><div class="video yt"><iframe src="${esc(v.src)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen title="فيديو"></iframe></div>
+    <div class="vtools"><button type="button" data-fs>⛶ ملو الشاشة</button><a href="${esc(url)}" target="_blank" rel="noopener">افتح في YouTube</a></div></div>`;
+  if (v.kind==='file') return v.audio ? `<div class="media-audio"><b>🎧 اسمع</b><audio controls preload="metadata" src="${esc(v.src)}"></audio></div>`
+    : `<div class="vwrap"><div class="video"><video src="${esc(v.src)}" controls playsinline></video></div><div class="vtools"><button type="button" data-fs>⛶ ملو الشاشة</button></div></div>`;
   return `<div class="video"><div class="vph"><div class="play"><svg width="30" height="30" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></div>
     <b>الفيديو هيشتغل هنا في الموقع الحقيقي</b><a href="${esc(url)}" target="_blank" rel="noopener">افتح الفيديو في صفحة جديدة</a></div></div>`;
 }
-
-/* Drive refused to stream the file: show a big button that opens it in Drive instead */
+const mediaCache={};
+function hydrateMedia(root){
+  (root||document).querySelectorAll('.vwrap[data-media]:not([data-done])').forEach(async w=>{
+    w.dataset.done='1';
+    const m=JSON.parse(w.dataset.media); const box=w.querySelector('.video');
+    try{
+      let r=mediaCache[m.id];
+      if(!r){ if(!m.l) throw 0;
+        const d=await api('getMedia', m.l, m.q);
+        if(!d||d.tooBig||!d.data) throw 0;
+        r=mediaCache[m.id]={url:URL.createObjectURL(b64ToBlob(d.data,d.mime)), mime:String(d.mime||'')}; }
+      if(!box.isConnected) return;
+      if(/^audio\//.test(r.mime)){
+        const fs=w.querySelector('[data-fs]'); if(fs) fs.remove();
+        box.className='media-audio'; box.innerHTML=`<b>🎧 اسمع</b><audio controls preload="auto" src="${r.url}"></audio>`;
+      } else box.innerHTML=`<video controls playsinline preload="metadata" src="${r.url}"></video>`;
+    }catch(e){
+      if(!box.isConnected) return;
+      const thumb='https://drive.google.com/thumbnail?id='+encodeURIComponent(m.id)+'&sz=w1000';
+      const view='https://drive.google.com/file/d/'+encodeURIComponent(m.id)+'/view';
+      box.innerHTML=`<video controls playsinline preload="metadata" poster="${esc(thumb)}" data-view="${esc(view)}" data-thumb="${esc(thumb)}" src="${esc('https://drive.google.com/uc?export=download&id='+encodeURIComponent(m.id))}"></video>`;
+    }
+  });
+}
+/* Drive refused to stream a large file: show a big button that opens it in Drive instead */
 document.addEventListener('error', e => {
   const vd = e.target;
   if (!vd || vd.tagName !== 'VIDEO' || !vd.dataset.view) return;
-  const box = vd.parentElement;
-  box.innerHTML = `<a class="vfb" href="${esc(vd.dataset.view)}" target="_blank" rel="noopener" style="background-image:url('${esc(vd.dataset.thumb)}')">
+  vd.parentElement.innerHTML = `<a class="vfb" href="${esc(vd.dataset.view)}" target="_blank" rel="noopener" style="background-image:url('${esc(vd.dataset.thumb)}')">
     <span class="play"><svg width="34" height="34" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></span>
-    <b>دوس هنا عشان تشغّل الفيديو</b><span style="font-size:.9rem;opacity:.9">هيفتح في Drive، وبعد ما تخلص ارجع هنا وجاوب</span></a>`;
+    <b>دوس هنا عشان تشغّل الفيديو</b><span style="font-size:.9rem;opacity:.9">الفيديو كبير، فهيفتح في Drive. بعد ما تخلص ارجع هنا</span></a>`;
 }, true);
-
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-fs]'); if (!b) return;
   const box = b.closest('.vwrap').querySelector('.video');
@@ -403,6 +478,54 @@ document.addEventListener('click', e => {
   if (go) { try { const p = go.call(box); if (p && p.catch) p.catch(()=>{}); } catch(x){} }
   try { screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(()=>{}); } catch(x){}
 });
+
+/* ===================== RECORDER (kids' recitation + servant's voice) ===================== */
+let REC=null;
+function killRec(){ if(REC){ try{ if(REC.mr && REC.mr.state!=='inactive'){ REC.cancelled=true; REC.mr.stop(); } }catch(e){} try{ REC.stream&&REC.stream.getTracks().forEach(t=>t.stop()); }catch(e){} clearInterval(REC.timer); REC=null; } }
+function recSupported(){ return !!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.MediaRecorder); }
+/* opts: {startLabel, doneLabel, onSubmit(blob, secs, setStatus)} */
+function mountRecorder(el, opts){
+  const idle=()=>{ el.innerHTML=`<div class="rec"><button type="button" class="micbtn" data-r="go" aria-label="${esc(opts.startLabel)}">${ICON_MIC}</button><b>${esc(opts.startLabel)}</b></div>`;
+    el.querySelector('[data-r="go"]').onclick=start; };
+  const fail=(msg)=>{ el.innerHTML=`<div class="rec"><p class="fb bad" style="margin:0">${msg}</p><button type="button" class="btn btn-soft" data-r="retry">جرّب تاني</button></div>`;
+    el.querySelector('[data-r="retry"]').onclick=idle; };
+  async function start(){
+    if(!recSupported()) return fail('الجهاز أو المتصفح ده مش بيدعم التسجيل. افتح الموقع من Chrome على الموبايل.');
+    killRec();
+    let stream;
+    try{ stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}}); }
+    catch(e){ return fail('محتاجين إذن المايكروفون. دوس على علامة القفل 🔒 جنب اللينك فوق، واسمح بالمايكروفون، وبعدين جرّب تاني.'); }
+    const types=['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/ogg;codecs=opus'];
+    const type=types.find(t=>MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t))||'';
+    let mr; try{ mr=new MediaRecorder(stream, type?{mimeType:type,audioBitsPerSecond:48000}:{}); }catch(e){ mr=new MediaRecorder(stream); }
+    const R=REC={mr,stream,chunks:[],start:Date.now(),timer:null};
+    mr.ondataavailable=ev=>{ if(ev.data&&ev.data.size) R.chunks.push(ev.data); };
+    mr.onstop=()=>{ stream.getTracks().forEach(t=>t.stop()); clearInterval(R.timer); if(R.cancelled||!el.isConnected) return;
+      const blob=new Blob(R.chunks,{type:(mr.mimeType||type||'audio/webm')}); const secs=(Date.now()-R.start)/1000; REC=null; review(blob,secs); };
+    mr.start(1000);
+    el.innerHTML=`<div class="rec"><button type="button" class="micbtn on" data-r="stop" aria-label="وقّف التسجيل">${ICON_STOP}</button>
+      <div class="timer" data-r="t">0:00</div><b>بيسجّل… دوس على المربع لما تخلص</b></div>`;
+    el.querySelector('[data-r="stop"]').onclick=()=>{ try{ mr.stop(); }catch(e){} };
+    R.timer=setInterval(()=>{ const s=(Date.now()-R.start)/1000; const t=el.querySelector('[data-r="t"]'); if(t) t.textContent=fmtSecs(s); if(s>=MAX_REC_SECS){ try{ mr.stop(); }catch(e){} } },500);
+  }
+  function review(blob,secs){
+    const url=URL.createObjectURL(blob);
+    el.innerHTML=`<div class="rec"><p style="margin:0;font-weight:700">اسمع تسجيلك (${fmtSecs(secs)})</p><audio controls src="${url}" style="width:100%"></audio>
+      <div class="row" style="justify-content:center"><button type="button" class="btn btn-red btn-big" data-r="ok">${esc(opts.doneLabel)}</button>
+      <button type="button" class="btn btn-soft" data-r="again">🎙 سجّل تاني</button></div><p class="muted" data-r="st" style="margin:0"></p></div>`;
+    el.querySelector('[data-r="again"]').onclick=start;
+    const ok=el.querySelector('[data-r="ok"]');
+    ok.onclick=async()=>{
+      if(secs<2){ toast('التسجيل قصير أوي، سجّل تاني'); return; }
+      ok.disabled=true; el.querySelector('[data-r="again"]').disabled=true;
+      const st=m=>{ const x=el.querySelector('[data-r="st"]'); if(x) x.textContent=m; };
+      st('جاري رفع التسجيل… استنى ثواني');
+      try{ await opts.onSubmit(blob,secs,st); }
+      catch(e){ ok.disabled=false; el.querySelector('[data-r="again"]').disabled=false; st('ما اترفعش التسجيل ('+e+'). دوس تاني.'); }
+    };
+  }
+  idle();
+}
 
 /* ===================== STATE ===================== */
 const S = { data:null, kid:null, progress:{}, classFilter:'الكل', search:'', board:null, boardSec:'all', boardCls:'الكل', admin:null };
@@ -417,16 +540,18 @@ async function boot(){
 
 /* ===================== NAME PICKER ===================== */
 function showPicker(){
-  S.kid=null; $('#who').hidden=true;
+  killRec(); S.kid=null; $('#who').hidden=true;
   const classes=['الكل', ...new Set([...CLASSES, ...S.data.kids.map(k=>String(k.class)).filter(Boolean)])];
   app.innerHTML=`<section class="view">
     <div class="hero"><img src="data:image/webp;base64,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" alt="">
       <h2 class="title-xl">أهلاً يا شماس!</h2><p class="lead">دوّر على اسمك واضغط عليه عشان تبدأ</p></div>
     <div class="chips" role="group" aria-label="الفصل">${classes.map(c=>`<button type="button" class="chip" aria-pressed="${c===S.classFilter}" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>
     <input class="search" id="kidSearch" type="search" placeholder="اكتب اسمك…" value="${esc(S.search)}" autocomplete="off">
-    <div class="names" id="names"></div></section>`;
+    <div class="names" id="names"></div>
+    <div style="text-align:center"><button type="button" class="btn btn-line" id="pickBoard">★ شوف لوحة الأبطال</button></div></section>`;
   app.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{S.classFilter=b.dataset.c; showPicker();});
   const s=$('#kidSearch'); s.oninput=()=>{S.search=s.value; drawNames();};
+  $('#pickBoard').onclick=showBoard;
   drawNames();
 }
 function drawNames(){
@@ -434,10 +559,10 @@ function drawNames(){
   const list=S.data.kids.filter(k=>(S.classFilter==='الكل'||k.class===S.classFilter)&&(!q||String(k.name).includes(q)))
     .sort((a,b)=>String(a.name).localeCompare(String(b.name),'ar'));
   $('#names').innerHTML = list.length ? list.map(k=>`<button type="button" class="name" data-id="${esc(k.id)}"><span class="av">${esc(String(k.name).trim()[0]||'؟')}</span><span>${esc(k.name)}<small>${esc(k.class)}</small></span></button>`).join('')
-    : `<div class="empty" style="grid-column:1/-1">مش لاقي اسمك؟ قول لأمين الخدمة يضيفه.</div>`;
+    : `<div class="empty" style="grid-column:1/-1">مش لاقي اسمك؟ قول للخادم يضيفه.</div>`;
   $('#names').querySelectorAll('.name').forEach(b=>b.onclick=()=>selectKid(b.dataset.id));
 }
-async function selectKid(id, quiet){
+async function selectKid(id){
   S.kid=S.data.kids.find(k=>String(k.id)===String(id)); store.set('kid',S.kid.id);
   $('#whoName').textContent=S.kid.name; $('#who').hidden=false;
   try { S.progress = await api('getKidProgress', S.kid.id); } catch(e){ S.progress={}; }
@@ -447,12 +572,13 @@ $('#changeKid').onclick=()=>{ store.set('kid',null); S.search=''; showPicker(); 
 
 /* ===================== HOME ===================== */
 function showHome(){
+  killRec();
   const count = key => S.data.lessons.filter(l=>l.section===key).length;
   app.innerHTML=`<section class="view">
     <div><h2 class="title-xl">أهلاً يا ${esc(S.kid.name.split(' ')[0])} 👋</h2><p class="lead">اختار القسم اللي عايز تذاكره النهارده</p></div>
     <div class="sections">
-      ${SECTIONS.map(s=>`<button type="button" class="sec ${s.cls}" data-s="${esc(s.key)}"><span class="ring"></span><span class="glyph">${s.glyph}</span><h2>${s.title}</h2><p>${s.sub} · ${count(s.key)} درس</p></button>`).join('')}
-      <button type="button" class="sec sec-gold" id="goBoard"><span class="glyph">★</span><h2>الأبطال</h2><p>مين الأول في المسابقات؟</p></button>
+      ${SECTIONS.map(s=>`<button type="button" class="sec ${s.cls}" data-s="${esc(s.key)}"><span class="ring"></span><span class="glyph">${s.glyph}</span><h2>${s.title}</h2><p>${s.sub} · ${count(s.key)} ${s.recite?'لحن':'درس'}</p></button>`).join('')}
+      <button type="button" class="sec sec-gold" id="goBoard"><span class="glyph">★</span><h2>الأبطال</h2><p>مين الأول في النقط؟</p></button>
     </div></section>`;
   app.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>showSection(b.dataset.s));
   $('#goBoard').onclick=showBoard;
@@ -461,14 +587,17 @@ function showHome(){
 
 /* ===================== SECTION ===================== */
 function showSection(key){
+  killRec();
   const sec=SECTIONS.find(s=>s.key===key);
   const ls=S.data.lessons.filter(l=>l.section===key);
   app.innerHTML=`<section class="view">
     <button class="back" type="button" id="bk">→ رجوع</button>
     <div><h2 class="title-xl">${sec.title}</h2><p class="lead">${sec.sub}</p></div>
     <div class="lessons">${ls.length?ls.map((l,i)=>{const p=S.progress[l.id];
-      return `<button type="button" class="lesson" data-id="${esc(l.id)}"><span class="num">${i+1}</span><span><span class="t">${esc(l.title)}</span><br><span class="s">${l.questions.length} أسئلة</span></span>${p?`<span class="done">✓ ${p.score} من ${p.total}</span>`:'<span class="new">جديد</span>'}</button>`}).join('')
-      :'<div class="card empty" style="grid-column:1/-1">لسه مفيش دروس هنا. استنى الجديد قريب!</div>'}</div></section>`;
+      const sub=sec.recite?'اسمع وسمّع':`${l.questions.length} أسئلة`;
+      const badge=p?(sec.recite?'<span class="done">✓ سمّعت</span>':`<span class="done">✓ ${p.score} من ${p.total}</span>`):'<span class="new">جديد</span>';
+      return `<button type="button" class="lesson" data-id="${esc(l.id)}"><span class="num">${sec.recite?'♪':i+1}</span><span><span class="t">${esc(l.title)}</span><br><span class="s">${sub}</span></span>${badge}</button>`}).join('')
+      :`<div class="card empty" style="grid-column:1/-1">لسه مفيش ${sec.recite?'ألحان':'دروس'} هنا. استنى الجديد قريب!</div>`}</div></section>`;
   $('#bk').onclick=showHome;
   app.querySelectorAll('.lesson').forEach(b=>b.onclick=()=>showLesson(b.dataset.id));
   goTop();
@@ -477,19 +606,21 @@ function showSection(key){
 /* ===================== LESSON + QUIZ ===================== */
 let Q=null;
 function showLesson(id){
+  killRec();
   const l=S.data.lessons.find(x=>x.id===id);
-  Q={lesson:l, i:0, answers:[], picked:null};
+  if (l.section===RECITE) return showRecite(l);
+  Q={lesson:l, i:0, answers:[]};
   app.innerHTML=`<section class="view">
     <button class="back" type="button" id="bk">→ رجوع للدروس</button>
-    <div><span class="tag ${l.section==='قبطي'?'red':''}">${esc(SECTIONS.find(s=>s.key===l.section)?.title||l.section)}</span>
+    <div><span class="tag ${l.section==='قبطي'?'red':''}">${esc(secTitle(l.section))}</span>
       <h2 class="title-xl" style="margin-top:6px">${esc(l.title)}</h2>${l.description?`<p class="lead">${esc(l.description)}</p>`:''}</div>
-    <div id="lessonIntro">${videoHTML(l.videoUrl)}</div>
+    <div id="lessonIntro">${videoHTML(l.videoUrl,{lesson:l.id,q:-1})}</div>
     <div id="quizArea" style="display:flex;justify-content:center">
       ${l.questions.length?`<button type="button" class="btn btn-red btn-big" id="startQ">${l.videoUrl?'خلصت الفيديو؟ يلا نجاوب ←':'يلا نبدأ ←'}</button>`:'<p class="muted">الدرس ده مفيهوش أسئلة لسه.</p>'}
     </div></section>`;
   $('#bk').onclick=()=>showSection(l.section);
   const st=$('#startQ'); if(st) st.onclick=()=>{ const li=$('#lessonIntro'); if(li){ li.innerHTML=''; li.hidden=true; } drawQuestion(); goTop(); };
-  goTop();
+  hydrateMedia(app); goTop();
 }
 function drawQuestion(){
   const l=Q.lesson, q=l.questions[Q.i];
@@ -497,18 +628,18 @@ function drawQuestion(){
   $('#quizArea').style.display='block';
   $('#quizArea').innerHTML=`<div class="card quiz">
     <div class="row" style="justify-content:space-between"><span class="muted">سؤال ${Q.i+1} من ${l.questions.length}</span><div class="dots">${dots}</div></div>
-    ${q.videoUrl?`<div class="view" style="gap:8px">${videoHTML(q.videoUrl)}<p class="muted" style="margin:0">▶ اتفرج على الفيديو وبعدين جاوب</p></div>`:''}
+    ${q.videoUrl?`<div class="view" style="gap:8px">${videoHTML(q.videoUrl,{lesson:l.id,q:Q.i})}<p class="muted" style="margin:0">▶ اتفرج على الفيديو وبعدين جاوب</p></div>`:''}
     <div class="q">${esc(q.question)}</div>
     <div class="opts">${q.options.map((o,i)=>`<button type="button" class="opt" data-i="${i}"><span class="k">${AR[i]}</span><span>${esc(o)}</span></button>`).join('')}</div>
     <div id="fb"></div></div>`;
   $('#quizArea').querySelectorAll('.opt').forEach(b=>b.onclick=()=>pick(Number(b.dataset.i)));
+  hydrateMedia($('#quizArea'));
 }
 function pick(i){
   if (Q.answers[Q.i]) return;
   const q=Q.lesson.questions[Q.i], ok=i===q.correct;
   Q.answers[Q.i]={q:Q.i, chosen:i, ok};
-  const btns=$('#quizArea').querySelectorAll('.opt');
-  btns.forEach((b,j)=>{ b.disabled=true; if(j===q.correct) b.classList.add('ok'); else if(j===i) b.classList.add('bad'); });
+  $('#quizArea').querySelectorAll('.opt').forEach((b,j)=>{ b.disabled=true; if(j===q.correct) b.classList.add('ok'); else if(j===i) b.classList.add('bad'); });
   const last=Q.i===Q.lesson.questions.length-1;
   const nextLbl=last?'شوف نتيجتك ←':'السؤال اللي بعده ←';
   $('#fb').innerHTML= ok
@@ -522,21 +653,20 @@ async function finish(){
   const l=Q.lesson, total=l.questions.length, score=Q.answers.filter(a=>a&&a.ok).length;
   const pct=total?score/total:0, stars=pct>=.9?3:pct>=.6?2:score>0?1:0;
   const msg=stars===3?'ممتاز! إنت بطل 🏆':stars===2?'شاطر جدًا! كمّل كده':stars===1?'كويس! اتفرج على الفيديو تاني وجرّب':'ولا يهمك، اتفرج على الفيديو تاني وحاول';
+  const R=S.data.rules||{solve:0,correct:1,full:0}, p=lessonPoints(R,score,total), prev=S.progress[l.id];
+  const ptsMsg=!prev?`<p style="margin:0;font-weight:700;color:var(--red)">كسبت ${nq(p)} ★</p>`
+    : score>prev.score?`<p style="margin:0;font-weight:700;color:var(--red)">حسّنت درجتك! نقطك في الدرس ده بقت ${nq(p)}</p>`
+    : `<p class="muted" style="margin:0">الدرس ده اتحسبلك قبل كده، والنقط بتتحسب من أحسن محاولة</p>`;
   $('#quizArea').innerHTML=`<div class="card result">
     <div class="stars">${[1,2,3].map(n=>n<=stars?'<b>★</b>':'★').join('')}</div>
-    <div class="score">${score} / ${total}</div><h3 style="color:var(--blue)">${msg}</h3>
-    ${(()=>{const R=S.data.rules||{solve:0,correct:1,full:0}, p=lessonPoints(R,score,total), prev=S.progress[l.id];
-      if(!prev) return `<p style="margin:0;font-weight:700;color:var(--red)">كسبت ${nq(p)} ★</p>`;
-      if(score>prev.score) return `<p style="margin:0;font-weight:700;color:var(--red)">حسّنت درجتك! نقطك في الدرس ده بقت ${nq(p)}</p>`;
-      return `<p class="muted" style="margin:0">الدرس ده اتحسبلك قبل كده، والنقط بتتحسب من أحسن محاولة</p>`;})()}
+    <div class="score">${score} / ${total}</div><h3 style="color:var(--blue)">${msg}</h3>${ptsMsg}
     <p class="muted" id="saveSt">جاري تسجيل إجابتك…</p>
     <div class="row" style="justify-content:center"><button type="button" class="btn btn-soft" id="again">جرّب الدرس تاني</button>
     <button type="button" class="btn btn-blue" id="toSec">باقي الدروس</button><button type="button" class="btn btn-line" id="toBoard">★ الأبطال</button></div></div>`;
   $('#again').onclick=()=>showLesson(l.id);
   $('#toSec').onclick=()=>showSection(l.section);
   $('#toBoard').onclick=showBoard;
-  save();
-  async function save(){
+  const save=async()=>{
     try{
       const r=await api('submitResult',{kidId:S.kid.id, lessonId:l.id, answers:Q.answers.map(a=>({q:a.q,chosen:a.chosen}))});
       $('#saveSt').textContent='✓ اتسجلت إجابتك';
@@ -546,31 +676,67 @@ async function finish(){
       $('#saveSt').innerHTML=`ما اتسجلتش الإجابة (${esc(e)}). <button type="button" class="mini" id="retry">حاول تاني</button>`;
       $('#retry').onclick=()=>{ $('#saveSt').textContent='جاري تسجيل إجابتك…'; save(); };
     }
-  }
+  };
+  save();
+}
+
+/* ===================== ALHAN: listen + record ===================== */
+function showRecite(l){
+  const prev=S.progress[l.id], R=S.data.rules||{};
+  app.innerHTML=`<section class="view">
+    <button class="back" type="button" id="bk">→ رجوع للألحان</button>
+    <div><span class="tag navy">الألحان</span>
+      <h2 class="title-xl" style="margin-top:6px">${esc(l.title)}</h2>${l.description?`<p class="lead">${esc(l.description)}</p>`:''}</div>
+    ${l.videoUrl?`<div class="view" style="gap:8px"><h3 style="color:var(--blue)">١. اسمع اللحن</h3>${videoHTML(l.videoUrl,{lesson:l.id,q:-1})}</div>`:''}
+    <div class="card view" style="gap:6px">
+      <h3 style="color:var(--blue)">${l.videoUrl?'٢. ':''}سمّع بصوتك 🎙</h3>
+      <p class="muted" style="margin:0">${prev?'إنت سمّعت اللحن ده قبل كده ✓ تقدر تسجّل تاني لو حابب.':`سجّل وإنت بتقول اللحن، وبعدين دوس «خلصت التسميع» وهتاخد ${nq(R.recite||0)}.`}</p>
+      <div id="recUI"></div>
+    </div></section>`;
+  $('#bk').onclick=()=>showSection(l.section);
+  mountRecorder($('#recUI'), {startLabel:'ابدأ التسجيل', doneLabel:'✓ خلصت التسميع', onSubmit: async(blob,secs)=>{
+    const data=await blobToB64(blob);
+    const r=await api('saveRecording',{kidId:S.kid.id, lessonId:l.id, mime:blob.type||'audio/webm', data, seconds:Math.round(secs)});
+    const first=!S.progress[l.id];
+    S.progress[l.id]={score:1,total:1}; S.board=null;
+    $('#recUI').innerHTML=`<div class="result" style="padding:16px 0"><div class="stars"><b>★</b><b>★</b><b>★</b></div>
+      <h3 style="color:var(--blue)">برافو يا ${esc(S.kid.name.split(' ')[0])}! 🎉 اتسجل التسميع</h3>
+      ${first?`<p style="margin:0;font-weight:700;color:var(--red)">كسبت ${nq(r.points)} ★</p>`:'<p class="muted" style="margin:0">التسميع الجديد اتبعت للخادم. نقط اللحن اتحسبتلك قبل كده.</p>'}
+      <p class="muted" style="margin:0">الخادم هيسمع تسميعك</p>
+      <div class="row" style="justify-content:center"><button type="button" class="btn btn-blue" id="toSec">باقي الألحان</button><button type="button" class="btn btn-line" id="toBoard">★ الأبطال</button></div></div>`;
+    $('#toSec').onclick=()=>showSection(l.section);
+    $('#toBoard').onclick=showBoard;
+  }});
+  hydrateMedia(app); goTop();
 }
 
 /* ===================== LEADERBOARD ===================== */
 async function showBoard(){
-  loading(); goTop();
+  killRec(); loading(); goTop();
   try{ if(!S.board) S.board=await api('getLeaderboard'); }catch(e){ app.innerHTML=`<div class="card empty">ما قدرناش نجيب الترتيب. ${esc(e)}</div>`; return; }
   drawBoard();
 }
 function drawBoard(){
-  const key=S.boardSec, cls=S.boardCls;
-  const rows=S.board.rows.map(r=>({...r, pts:key==='all'?r.points:(r.bySection[key]||0)}))
-    .filter(r=>r.pts>0&&(cls==='الكل'||r.class===cls)).sort((a,b)=>b.pts-a.pts||b.lessons-a.lessons||a.name.localeCompare(b.name,'ar'));
+  const key=S.boardSec, cls=S.boardCls, B=S.board;
+  const rows=B.rows.map(r=>({...r, pts:key==='all'?r.points:(r.bySection[key]||0)}))
+    .filter(r=>(key==='all'||r.pts!==0)&&(cls==='الكل'||r.class===cls))
+    .sort((a,b)=>b.pts-a.pts||a.name.localeCompare(b.name,'ar'));
   let rank=0, prev=null; rows.forEach((r,i)=>{ if(r.pts!==prev){rank=i+1;prev=r.pts} r.rank=rank; });
-  const secs=[['all','الكل'],...SECTIONS.map(s=>[s.key,s.title])];
-  const pod=[rows[1],rows[0],rows[2]];
+  const secs=[['all','الكل'],...SECTIONS.map(s=>[s.key,s.title]),[BONUS_KEY,'نقط الحصة']];
+  const top=rows.filter(r=>r.pts>0);
+  const pod=[top[1],top[0],top[2]];
+  const legend=(B.cats||[]).map(c=>`<span>${esc(c.name)} <b>${signed(c.points)}</b></span>`).join('');
   app.innerHTML=`<section class="view">
     <button class="back" type="button" id="bk">→ رجوع</button>
-    <div><h2 class="title-xl">لوحة الأبطال ★</h2><p class="lead">${esc(rulesText(S.board.rules))}</p></div>
-    <div class="chips" style="justify-content:flex-start">${secs.map(([k,t])=>`<button type="button" class="chip" aria-pressed="${k===key}" data-k="${esc(k)}">${t}</button>`).join('')}
-      <span style="width:12px"></span>${['الكل',...CLASSES].map(c=>`<button type="button" class="chip" aria-pressed="${c===cls}" data-c="${esc(c)}">${c==='الكل'?'كل الفصول':esc(c)}</button>`).join('')}</div>
-    ${rows.length?`<div class="podium">${pod.map((r,i)=>r?`<div class="pod p${r.rank}"><div class="medal">${r.rank}</div><div class="nm">${esc(r.name)}</div><div class="muted" style="font-size:.85rem">${esc(r.class)}</div><div class="pt">${r.pts}</div></div>`:'<div></div>').join('')}</div>
-    <div class="card tbl"><table class="board"><thead><tr><th>#</th><th>الاسم</th><th>الفصل</th><th>دروس</th><th>النقط</th></tr></thead><tbody>
-      ${rows.map(r=>`<tr class="${S.kid&&r.kidId===String(S.kid.id)?'me':''}"><td class="rk">${r.rank}</td><td>${esc(r.name)}</td><td>${esc(r.class)}</td><td>${r.lessons}</td><td><b>${r.pts}</b></td></tr>`).join('')}
-    </tbody></table></div>`:'<div class="card empty">لسه محدش جاوب هنا. كن أول واحد!</div>'}</section>`;
+    <div style="text-align:center"><h2 class="title-xl">لوحة الأبطال ★</h2></div>
+    ${legend?`<div class="legend">${legend}</div>`:''}
+    <p class="hint" style="text-align:center;margin:0">${esc(rulesText(B.rules||{}))}</p>
+    <div class="chips">${secs.map(([k,t])=>`<button type="button" class="chip" aria-pressed="${k===key}" data-k="${esc(k)}">${t}</button>`).join('')}</div>
+    <div class="chips">${['الكل',...CLASSES].map(c=>`<button type="button" class="chip" aria-pressed="${c===cls}" data-c="${esc(c)}">${c==='الكل'?'كل الفصول':esc(c)}</button>`).join('')}</div>
+    ${top.length?`<div class="podium">${pod.map(r=>r?`<div class="pod p${Math.min(r.rank,3)}"><div class="medal">${r.rank}</div><div class="nm">${esc(r.name)}</div><div class="muted" style="font-size:.85rem">${esc(r.class)}</div><div class="pt">${r.pts}</div></div>`:'<div></div>').join('')}</div>`:''}
+    ${rows.length?`<div class="card tbl"><table class="board"><thead><tr><th>#</th><th>الاسم</th><th>الفصل</th><th>النقط</th></tr></thead><tbody>
+      ${rows.map(r=>`<tr class="${S.kid&&r.kidId===String(S.kid.id)?'me':''}"><td class="rk">${r.rank}</td><td>${esc(r.name)}</td><td>${esc(r.class)}</td><td><b>${r.pts}</b></td></tr>`).join('')}
+    </tbody></table></div>`:'<div class="card empty">لسه محدش خد نقط هنا. كن أول واحد!</div>'}</section>`;
   $('#bk').onclick=()=>S.kid?showHome():showPicker();
   app.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{S.boardSec=b.dataset.k; drawBoard();});
   app.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{S.boardCls=b.dataset.c; drawBoard();});
@@ -579,29 +745,31 @@ function drawBoard(){
 /* ===================== ADMIN ===================== */
 $('#adminLink').onclick=showAdminLogin;
 function showAdminLogin(){
-  $('#who').hidden=true; goTop();
-  if (S.admin) return showAdmin('lessons');
+  killRec(); $('#who').hidden=true; goTop();
+  if (S.admin) return showAdmin(S.admin.tab||'bonus');
   app.innerHTML=`<section class="view" style="max-width:420px;margin:0 auto">
     <button class="back" type="button" id="bk">→ رجوع للموقع</button>
     <form class="card" id="lf" style="display:flex;flex-direction:column;gap:14px">
       <h2 style="color:var(--blue)">لوحة الإدارة</h2>
       <div class="field"><label for="apw">كلمة السر</label><input class="inp" id="apw" type="password" autocomplete="current-password"></div>
       <div id="lerr" style="color:var(--red);min-height:1.4em"></div>
-      <button class="btn btn-blue" type="submit">دخول</button>
+      <button class="btn btn-blue" type="submit" id="lbtn">دخول</button>
       ${LIVE?'':'<p class="demo-note">نسخة تجريبية: كلمة السر 1234</p>'}
     </form></section>`;
   $('#bk').onclick=backToSite;
-  $('#lf').onsubmit=async e=>{ e.preventDefault(); const pw=$('#apw').value;
-    try{ const d=await api('adminGetData',pw); S.admin={pw,data:d,tab:'lessons'}; showAdmin('lessons'); }
-    catch(err){ $('#lerr').textContent=err; } };
+  $('#lf').onsubmit=async e=>{ e.preventDefault(); const pw=$('#apw').value; $('#lbtn').disabled=true;
+    try{ const d=await api('adminGetData',pw); S.admin={pw,data:d,tab:'bonus'}; showAdmin('bonus'); }
+    catch(err){ $('#lerr').textContent=err; $('#lbtn').disabled=false; } };
   $('#apw').focus();
 }
-function backToSite(){ if(S.kid){ $('#who').hidden=false; showHome(); } else showPicker(); }
+function backToSite(){ killRec(); if(S.kid){ $('#who').hidden=false; showHome(); } else showPicker(); }
 async function refreshPublic(){ try{ S.data=await api('getPublicData'); S.board=null; }catch(e){} }
 
 function showAdmin(tab){
+  killRec();
   S.admin.tab=tab; const d=S.admin.data;
-  const tabs=[['lessons','الدروس والأسئلة'],['kids','أسماء الأطفال'],['results','النتائج'],['settings','الإعدادات']];
+  const newRecs=(d.recordings||[]).filter(r=>!(r.heard===true||String(r.heard).toLowerCase()==='true')).length;
+  const tabs=[['bonus','نقط الحصة'],['recs','التسميع'+(newRecs?` <span class="badge">${newRecs}</span>`:'')],['lessons','الدروس والألحان'],['kids','الأطفال'],['results','النتائج'],['settings','الإعدادات']];
   app.innerHTML=`<section class="view">
     <div class="row" style="justify-content:space-between"><h2 class="title-xl">لوحة الإدارة</h2>
       <div class="row"><button type="button" class="btn btn-line" id="toSite">عرض الموقع</button><button type="button" class="btn btn-soft" id="logout">خروج</button></div></div>
@@ -611,33 +779,152 @@ function showAdmin(tab){
   app.querySelectorAll('.tab').forEach(b=>b.onclick=()=>showAdmin(b.dataset.t));
   $('#toSite').onclick=backToSite;
   $('#logout').onclick=()=>{ S.admin=null; backToSite(); };
-  ({lessons:paneLessons,kids:paneKids,results:paneResults,settings:paneSettings})[tab](d);
+  ({bonus:paneBonus,recs:paneRecs,lessons:paneLessons,kids:paneKids,results:paneResults,settings:paneSettings})[tab](d);
 }
+const QUIET=new Set(['adminAddBonus','adminDeleteBonus','adminMarkRecording','adminSaveCategories','adminGetData']);
 async function adminCall(fn, ...args){
   const d=await api(fn, S.admin.pw, ...args);
   if (d && d.lessons) S.admin.data=d;
-  await refreshPublic();
+  if (QUIET.has(fn)) S.board=null; else await refreshPublic();
   return d;
 }
 function twoStep(btn, label, action){
   btn.onclick=()=>{ if(btn.dataset.armed){ action(); return; }
-    btn.dataset.armed='1'; const old=btn.textContent; btn.textContent=label; btn.classList.add('sure');
-    setTimeout(()=>{ if(btn.isConnected){ delete btn.dataset.armed; btn.textContent=old; btn.classList.remove('sure'); } },3000); };
+    btn.dataset.armed='1'; const old=btn.innerHTML; btn.textContent=label; btn.classList.add('sure');
+    setTimeout(()=>{ if(btn.isConnected){ delete btn.dataset.armed; btn.innerHTML=old; btn.classList.remove('sure'); } },3000); };
+}
+const activeKids=d=>d.kids.filter(k=>k.active===true||String(k.active).toLowerCase()==='true').sort((a,b)=>String(a.name).localeCompare(String(b.name),'ar'));
+
+/* --- session points (like leaderboarded: categories, bulk, quick −1/+1/+5, history) --- */
+function paneBonus(d){
+  const cats=d.cats||[];
+  const F=S.admin.bf||(S.admin.bf={cat:cats.length?0:-1, reason:cats[0]?cats[0].name:'', points:cats[0]?cats[0].points:'', date:d.today||new Date().toLocaleDateString('en-CA'), cls:'الكل', sel:[], q:'', qq:''});
+  const kids=activeKids(d);
+  const totals={}; (d.bonus||[]).forEach(b=>{ totals[b.kidId]=(totals[b.kidId]||0)+(Number(b.points)||0); });
+  const pane=$('#pane');
+  const draw=()=>{
+    const sel=new Set(F.sel);
+    const shown=kids.filter(k=>(F.cls==='الكل'||k.class===F.cls)&&(!F.q||String(k.name).includes(F.q)));
+    const qShown=kids.filter(k=>!F.qq||String(k.name).includes(F.qq));
+    const n=F.sel.length, pts=Math.round(Number(F.points)||0);
+    pane.innerHTML=`<div class="view">
+      <div class="card view" style="gap:14px">
+        <h3 style="color:var(--blue)">إضافة نقط لمجموعة أطفال</h3>
+        <div class="field"><label>نوع النقط</label><div class="chips start">
+          ${cats.map((c,i)=>`<button type="button" class="chip cat" aria-pressed="${F.cat===i}" data-cat="${i}">${esc(c.name)} <b>${signed(c.points)}</b></button>`).join('')}
+          <button type="button" class="chip cat" aria-pressed="${F.cat===-1}" data-cat="-1">نقط تانية…</button></div>
+          <span class="hint">تقدر تغيّر الأنواع دي من «الإعدادات»</span></div>
+        <div class="grid3">
+          <div class="field"><label for="bReason">السبب</label><input class="inp" id="bReason" value="${esc(F.reason)}" placeholder="مثلاً: حفظ آية"></div>
+          <div class="field"><label for="bPts">النقط</label><input class="inp" id="bPts" type="number" step="1" value="${esc(F.points)}" placeholder="مثلاً 5 أو ‎-2‎"></div>
+          <div class="field"><label for="bDate">اليوم</label><input class="inp" id="bDate" type="date" value="${esc(F.date)}"></div>
+        </div>
+        <div class="row" style="justify-content:space-between">
+          <div class="chips start">${['الكل',...CLASSES].map(c=>`<button type="button" class="chip" aria-pressed="${c===F.cls}" data-bc="${esc(c)}">${c==='الكل'?'كل الفصول':esc(c)}</button>`).join('')}</div>
+          <div class="row"><button type="button" class="mini" id="selAll">اختار اللي ظاهرين</button><button type="button" class="mini" id="selNone">شيل الاختيار</button></div>
+        </div>
+        <input class="inp" id="bSearch" type="search" placeholder="دوّر على اسم…" value="${esc(F.q)}">
+        <div class="kgrid">${shown.map(k=>`<label class="kc"><input type="checkbox" data-k="${esc(k.id)}" ${sel.has(k.id)?'checked':''}><span>${esc(k.name)}<small>${esc(k.class)}</small></span></label>`).join('')||'<p class="muted">مفيش أسماء.</p>'}</div>
+        <div id="berr" style="color:var(--red);font-weight:700"></div>
+        <button type="button" class="btn btn-red btn-big" id="addB" ${n&&pts?'':'disabled'}>${n&&pts?`إضافة ${signed(pts)} لـ ${n} ${n===1?'طفل':n<=10?'أطفال':'طفل'}`:'اختار النوع والأطفال'}</button>
+      </div>
+
+      <div class="card view" style="gap:10px">
+        <div class="row" style="justify-content:space-between"><h3 style="color:var(--blue)">تعديل سريع</h3><span class="hint">كل دوسة بتتسجل في السجل تحت، وتقدر تلغيها</span></div>
+        <input class="inp" id="qSearch" type="search" placeholder="دوّر على اسم…" value="${esc(F.qq)}">
+        <div class="tbl"><table class="res"><thead><tr><th>الاسم</th><th>الفصل</th><th>نقط الحصة</th><th></th></tr></thead><tbody>
+          ${qShown.map(k=>`<tr><td>${esc(k.name)}</td><td>${esc(k.class)}</td><td><b>${totals[k.id]||0}</b></td><td><div class="qbtns">
+            <button type="button" class="mini del" data-q="${esc(k.id)}" data-n="-1">−1</button><button type="button" class="mini" data-q="${esc(k.id)}" data-n="1">+1</button><button type="button" class="mini" data-q="${esc(k.id)}" data-n="5">+5</button></div></td></tr>`).join('')}
+        </tbody></table></div>
+      </div>
+
+      <div class="card view" style="gap:10px">
+        <h3 style="color:var(--blue)">السجل</h3>
+        ${(d.bonus||[]).length?`<div class="alist">${d.bonus.slice(0,150).map(b=>`<div class="aitem"><div class="grow"><b>${esc(b.kidName)}</b> <span class="hint">${esc(b.class)}</span><br><span class="hint">${esc(fmtDay(b.date))} · ${esc(b.reason)}</span></div>
+          <b class="${Number(b.points)<0?'pts-neg':'pts-pos'}">${signed(Number(b.points)||0)}</b><button type="button" class="mini del" data-delb="${esc(b.id)}">إلغاء</button></div>`).join('')}</div>`:'<p class="muted" style="margin:0">لسه مفيش نقط اتضافت.</p>'}
+      </div></div>`;
+
+    pane.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{ const i=Number(b.dataset.cat); F.cat=i;
+      if(i>=0){ F.reason=cats[i].name; F.points=cats[i].points; } else { F.reason=''; F.points=''; } draw(); });
+    $('#bReason').oninput=e=>{ F.reason=e.target.value; };
+    $('#bPts').oninput=e=>{ F.points=e.target.value; const b=$('#addB'), n2=F.sel.length, p2=Math.round(Number(F.points)||0);
+      b.disabled=!(n2&&p2); b.textContent=n2&&p2?`إضافة ${signed(p2)} لـ ${n2} ${n2===1?'طفل':n2<=10?'أطفال':'طفل'}`:'اختار النوع والأطفال'; };
+    $('#bDate').onchange=e=>{ F.date=e.target.value; };
+    pane.querySelectorAll('[data-bc]').forEach(b=>b.onclick=()=>{ F.cls=b.dataset.bc; draw(); });
+    $('#selAll').onclick=()=>{ const s=new Set(F.sel); shown.forEach(k=>s.add(k.id)); F.sel=[...s]; draw(); };
+    $('#selNone').onclick=()=>{ F.sel=[]; draw(); };
+    const keep=(id,fn)=>{ const el=$(id); el.oninput=e=>{ fn(e.target.value); clearTimeout(F.t); F.t=setTimeout(()=>{ draw(); const i=$(id); i.focus(); i.setSelectionRange(i.value.length,i.value.length); },300); }; };
+    keep('#bSearch',v=>F.q=v); keep('#qSearch',v=>F.qq=v);
+    pane.querySelectorAll('.kc input').forEach(c=>c.onchange=()=>{ const s=new Set(F.sel); c.checked?s.add(c.dataset.k):s.delete(c.dataset.k); F.sel=[...s];
+      const b=$('#addB'), n2=F.sel.length, p2=Math.round(Number(F.points)||0); b.disabled=!(n2&&p2); b.textContent=n2&&p2?`إضافة ${signed(p2)} لـ ${n2} ${n2===1?'طفل':n2<=10?'أطفال':'طفل'}`:'اختار النوع والأطفال'; });
+    $('#addB').onclick=async()=>{ const b=$('#addB'); const p2=Math.round(Number(F.points)||0);
+      if(!F.reason.trim()) { $('#berr').textContent='اكتب السبب.'; return; }
+      b.disabled=true; b.textContent='جاري الإضافة…';
+      try{ await adminCall('adminAddBonus',F.sel,F.reason.trim(),p2,F.date); toast(`اتضاف ${signed(p2)} لـ ${F.sel.length}`); F.sel=[]; paneBonus(S.admin.data); }
+      catch(e){ $('#berr').textContent=e; b.disabled=false; } };
+    pane.querySelectorAll('[data-q]').forEach(b=>b.onclick=async()=>{ const y=window.scrollY; b.disabled=true;
+      try{ await adminCall('adminAddBonus',[b.dataset.q],'تعديل سريع',Number(b.dataset.n),d.today||F.date); paneBonus(S.admin.data); window.scrollTo(0,y); toast(signed(Number(b.dataset.n))+' ✓'); }
+      catch(e){ toast(e); b.disabled=false; } });
+    pane.querySelectorAll('[data-delb]').forEach(b=>twoStep(b,'متأكد؟',async()=>{ const y=window.scrollY;
+      try{ await adminCall('adminDeleteBonus',b.dataset.delb); paneBonus(S.admin.data); window.scrollTo(0,y); toast('اتلغت'); }catch(e){ toast(e); } }));
+  };
+  d=S.admin.data; draw();
+}
+
+/* --- recordings --- */
+const recCache={};
+function paneRecs(d){
+  const F=S.admin.rcf||(S.admin.rcf={st:'new',cls:'الكل',lesson:'all',q:''});
+  const heard=r=>r.heard===true||String(r.heard).toLowerCase()==='true';
+  const recs=d.recordings||[];
+  const lessonsR=d.lessons.filter(l=>l.section===RECITE);
+  const draw=()=>{
+    const rows=recs.filter(r=>(F.st==='all'||(F.st==='new'?!heard(r):heard(r)))&&(F.cls==='الكل'||r.class===F.cls)&&(F.lesson==='all'||r.lessonId===F.lesson)&&(!F.q||String(r.kidName).includes(F.q)));
+    const nNew=recs.filter(r=>!heard(r)).length;
+    $('#pane').innerHTML=`<div class="view">
+      <div class="stats"><div class="stat"><b>${recs.length}</b><span>تسميع كلّه</span></div><div class="stat"><b>${nNew}</b><span>لسه ما اتسمعش</span></div><div class="stat"><b>${new Set(recs.map(r=>r.kidId)).size}</b><span>طفل سمّع</span></div></div>
+      <div class="card view" style="gap:12px">
+        <div class="chips start">${[['new','جديد'],['heard','اتسمع'],['all','الكل']].map(([k,t])=>`<button type="button" class="chip" aria-pressed="${F.st===k}" data-st="${k}">${t}</button>`).join('')}</div>
+        <div class="row"><select class="inp" id="rcCls" style="width:auto"><option>الكل</option>${CLASSES.map(c=>`<option ${F.cls===c?'selected':''}>${c}</option>`).join('')}</select>
+          <select class="inp" id="rcL" style="width:auto;max-width:100%"><option value="all">كل الألحان</option>${lessonsR.map(l=>`<option value="${esc(l.id)}" ${F.lesson===l.id?'selected':''}>${esc(l.title)}</option>`).join('')}</select>
+          <input class="inp" id="rcQ" type="search" placeholder="دوّر باسم طفل" value="${esc(F.q)}" style="flex:1;min-width:150px"></div>
+        ${rows.length?`<div class="alist">${rows.map(r=>`<div class="aitem rec-item" data-id="${esc(r.id)}">
+          <div class="grow"><b>${esc(r.kidName)}</b> <span class="hint">${esc(r.class)}</span><br><span class="hint">${esc(r.lessonTitle)} · ${esc(fmtTime(r.timestamp))} · ${fmtSecs(r.seconds)}</span></div>
+          ${heard(r)?'<span class="tag">✓ اتسمع</span>':'<span class="tag red">جديد</span>'}
+          <button type="button" class="mini" data-play="${esc(r.id)}">▶ اسمع</button>
+          <button type="button" class="mini" data-mark="${esc(r.id)}" data-v="${heard(r)?'0':'1'}">${heard(r)?'رجّعه جديد':'✓ اتسمع'}</button>
+          ${r.fileUrl?`<a class="mini" href="${esc(r.fileUrl)}" target="_blank" rel="noopener">Drive</a>`:''}
+          <div class="pl" style="flex-basis:100%"></div></div>`).join('')}</div>`:`<p class="muted" style="margin:0">${recs.length?'مفيش تسميع بالفلتر ده.':'لسه محدش سمّع. أول ما طفل يسجّل هيظهر هنا.'}</p>`}
+      </div></div>`;
+    $('#pane').querySelectorAll('[data-st]').forEach(b=>b.onclick=()=>{ F.st=b.dataset.st; draw(); });
+    $('#rcCls').onchange=e=>{ F.cls=e.target.value; draw(); };
+    $('#rcL').onchange=e=>{ F.lesson=e.target.value; draw(); };
+    $('#rcQ').oninput=e=>{ F.q=e.target.value; clearTimeout(F.t); F.t=setTimeout(()=>{ draw(); const i=$('#rcQ'); i.focus(); i.setSelectionRange(i.value.length,i.value.length); },300); };
+    $('#pane').querySelectorAll('[data-play]').forEach(b=>b.onclick=async()=>{
+      const id=b.dataset.play, pl=b.closest('.aitem').querySelector('.pl');
+      b.disabled=true; b.textContent='جاري التحميل…';
+      try{ let u=recCache[id]; if(!u){ const r=await api('adminGetRecording',S.admin.pw,id); u=recCache[id]=URL.createObjectURL(b64ToBlob(r.data,r.mime)); }
+        pl.innerHTML=`<audio controls autoplay src="${u}" style="width:100%"></audio>`; b.textContent='▶ اسمع'; b.disabled=false; }
+      catch(e){ toast(e); b.textContent='▶ اسمع'; b.disabled=false; } });
+    $('#pane').querySelectorAll('[data-mark]').forEach(b=>b.onclick=async()=>{ const y=window.scrollY; b.disabled=true;
+      try{ await adminCall('adminMarkRecording',b.dataset.mark,b.dataset.v==='1'); showAdmin('recs'); window.scrollTo(0,y); }catch(e){ toast(e); b.disabled=false; } });
+  };
+  draw();
 }
 
 /* --- lessons --- */
 function paneLessons(d){
   const pane=$('#pane');
   pane.innerHTML=`<div class="view">
-    <div class="row" style="justify-content:space-between"><p class="muted" style="margin:0">${d.lessons.length} درس</p><button type="button" class="btn btn-red" id="newL">+ درس جديد</button></div>
+    <div class="row" style="justify-content:space-between"><p class="muted" style="margin:0">${d.lessons.length} درس</p><button type="button" class="btn btn-red" id="newL">+ درس أو لحن جديد</button></div>
     ${SECTIONS.map(s=>{const ls=d.lessons.filter(l=>l.section===s.key); return `<div class="card view" style="gap:10px"><h3 style="color:var(--blue)">${s.title}</h3>
-      ${ls.length?`<div class="alist">${ls.map(l=>`<div class="aitem"><div class="grow"><b>${esc(l.title)}</b><br><span class="hint">${l.questions.length} أسئلة · ${l.videoUrl?'فيه فيديو للدرس':'من غير فيديو للدرس'}${(n=>n?` · ${n} ${n===1?'سؤال فيه':'أسئلة فيها'} فيديو`:'')(l.questions.filter(q=>q.videoUrl).length)}</span></div>
-        ${l.active?'':'<span class="tag off">مخفي</span>'}<button type="button" class="mini" data-edit="${esc(l.id)}">تعديل</button><button type="button" class="mini del" data-del="${esc(l.id)}">حذف</button></div>`).join('')}</div>`:'<p class="muted" style="margin:0">مفيش دروس لسه.</p>'}</div>`}).join('')}
+      ${ls.length?`<div class="alist">${ls.map(l=>`<div class="aitem"><div class="grow"><b>${esc(l.title)}</b><br><span class="hint">${s.recite?(l.videoUrl?'فيه فيديو/فويس · الطفل بيسجّل التسميع':'من غير فيديو/فويس · الطفل بيسجّل التسميع'):`${l.questions.length} أسئلة · ${l.videoUrl?'فيه فيديو للدرس':'من غير فيديو للدرس'}${(n=>n?` · ${n} ${n===1?'سؤال فيه':'أسئلة فيها'} فيديو`:'')(l.questions.filter(q=>q.videoUrl).length)}`}</span></div>
+        ${l.active?'':'<span class="tag off">مخفي</span>'}<button type="button" class="mini" data-edit="${esc(l.id)}">تعديل</button><button type="button" class="mini del" data-del="${esc(l.id)}">حذف</button></div>`).join('')}</div>`:'<p class="muted" style="margin:0">مفيش لسه.</p>'}</div>`}).join('')}
   </div>`;
   $('#newL').onclick=()=>editLesson(null);
   pane.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editLesson(d.lessons.find(l=>l.id===b.dataset.edit)));
   pane.querySelectorAll('[data-del]').forEach(b=>twoStep(b,'متأكد؟ اضغط تاني',async()=>{
-    try{ await adminCall('adminDeleteLesson',b.dataset.del); toast('اتحذف الدرس'); showAdmin('lessons'); }catch(e){ toast(e); } }));
+    try{ await adminCall('adminDeleteLesson',b.dataset.del); toast('اتحذف'); showAdmin('lessons'); }catch(e){ toast(e); } }));
 }
 function blankQ(){ return {question:'',raw:['','','',''],correctN:1,videoUrl:''}; }
 function editLesson(l){
@@ -646,45 +933,68 @@ function editLesson(l){
     : {id:'',section:SECTIONS[0].key,title:'',videoUrl:'',description:'',active:true,questions:[blankQ()]};
   const pane=$('#pane');
   const draw=()=>{
+    killRec();
+    const rec=L.section===RECITE;
+    if(!rec && !L.questions.length) L.questions.push(blankQ());
     pane.innerHTML=`<form class="card view" id="lform" style="gap:16px">
-      <h3 style="color:var(--blue)">${L.id?'تعديل درس':'درس جديد'}</h3>
+      <h3 style="color:var(--blue)">${L.id?'تعديل':'جديد'}</h3>
       <div class="grid2">
         <div class="field"><label for="fSec">القسم</label><select class="inp" id="fSec">${SECTIONS.map(s=>`<option value="${esc(s.key)}" ${s.key===L.section?'selected':''}>${s.title}</option>`).join('')}</select></div>
-        <div class="field"><label for="fTitle">اسم الدرس</label><input class="inp" id="fTitle" value="${esc(L.title)}" placeholder="مثلاً: الحروف من ⲁ إلى ⲑ" required></div>
+        <div class="field"><label for="fTitle">${rec?'اسم اللحن':'اسم الدرس'}</label><input class="inp" id="fTitle" value="${esc(L.title)}" placeholder="${rec?'مثلاً: لحن الأسبوع: تين أو أوشت':'مثلاً: الحروف من ⲁ إلى ⲑ'}" required></div>
       </div>
-      <div class="field"><label for="fVid">لينك الفيديو</label><input class="inp" id="fVid" dir="ltr" value="${esc(L.videoUrl)}" placeholder="https://youtu.be/…">
-        <span class="hint" id="vidHint"></span></div>
-      <div class="field"><label for="fDesc">كلمتين للأطفال قبل الفيديو</label><textarea class="inp" id="fDesc" placeholder="اتفرج على الفيديو كويس وركّز على…">${esc(L.description)}</textarea></div>
+      <div class="field"><label for="fVid">${rec?'لينك اللحن (فيديو YouTube أو فويس على Drive)':'لينك الفيديو'}</label><input class="inp" id="fVid" dir="ltr" value="${esc(L.videoUrl)}" placeholder="https://youtu.be/… أو https://drive.google.com/file/d/…">
+        <span class="hint" id="vidHint"></span>
+        <div class="row" style="margin-top:4px"><label class="mini" style="cursor:pointer">⬆ ارفع فويس أو فيديو من جهازك<input type="file" id="fUp" accept="audio/*,video/*" hidden></label>
+          ${rec?'<button type="button" class="mini" id="fRecBtn">🎙 سجّل اللحن بصوتك</button>':''}<span class="hint" id="upSt"></span></div>
+        <div id="fRec"></div></div>
+      <div class="field"><label for="fDesc">${rec?'كلمتين للأطفال':'كلمتين للأطفال قبل الفيديو'}</label><textarea class="inp" id="fDesc" placeholder="${rec?'اسمع اللحن كذا مرة، وبعدين سجّل وإنت بتقوله.':'اتفرج على الفيديو كويس وركّز على…'}">${esc(L.description)}</textarea></div>
       <label class="row" style="gap:8px;font-weight:700"><input type="checkbox" id="fAct" ${L.active?'checked':''} style="width:20px;height:20px;accent-color:var(--blue)"> ظاهر للأطفال</label>
+      ${rec?`<div class="demo-note" style="background:var(--blue-l);color:var(--blue)">🎙 في الألحان مفيش أسئلة. الطفل بيسمع اللحن، وبعدين بيسجّل التسميع بصوته ويدوس «خلصت التسميع»، وبياخد ${nq((S.admin.data.rules||{}).recite||0)} (تقدر تغيّرها من الإعدادات). التسجيلات بتظهرلك في تبويب «التسميع».</div>`:`
       <h3 style="color:var(--blue)">الأسئلة <span class="hint">(اختار الإجابة الصح بالدايرة اللي جنبها)</span></h3>
       <div class="view" style="gap:12px" id="qs">${L.questions.map((q,i)=>`<div class="qcard">
         <div class="qhead"><b>سؤال ${i+1}</b><button type="button" class="mini del" data-rq="${i}" ${L.questions.length<2?'disabled':''}>حذف السؤال</button></div>
-        <textarea class="inp" id="q${i}" data-q="${i}" placeholder="اكتب السؤال…" style="min-height:56px">${esc(q.question)}</textarea>
+        <textarea class="inp" id="q${i}" placeholder="اكتب السؤال…" style="min-height:56px">${esc(q.question)}</textarea>
         <div class="field"><label for="qv${i}" style="font-weight:500;font-size:.85rem">🎬 فيديو للسؤال ده (اختياري)</label><input class="inp" id="qv${i}" dir="ltr" value="${esc(q.videoUrl||'')}" placeholder="https://youtu.be/… (سيبه فاضي لو مفيش)"></div>
-        ${q.raw.map((o,j)=>`<div class="optrow"><input type="radio" name="c${i}" id="c${i}_${j}" value="${j+1}" ${q.correctN===j+1?'checked':''} aria-label="الإجابة الصح"><input class="inp" id="o${i}_${j}" data-o="${i}_${j}" value="${esc(o)}" placeholder="اختيار ${AR[j]}${j>1?' (اختياري)':''}"></div>`).join('')}
+        ${q.raw.map((o,j)=>`<div class="optrow"><input type="radio" name="c${i}" id="c${i}_${j}" value="${j+1}" ${q.correctN===j+1?'checked':''} aria-label="الإجابة الصح"><input class="inp" id="o${i}_${j}" value="${esc(o)}" placeholder="اختيار ${AR[j]}${j>1?' (اختياري)':''}"></div>`).join('')}
       </div>`).join('')}</div>
-      <button type="button" class="btn btn-soft" id="addQ" style="align-self:flex-start">+ سؤال كمان</button>
+      <button type="button" class="btn btn-soft" id="addQ" style="align-self:flex-start">+ سؤال كمان</button>`}
       <div id="ferr" style="color:var(--red);font-weight:700"></div>
-      <div class="row"><button type="submit" class="btn btn-blue" id="saveL">حفظ الدرس</button><button type="button" class="btn btn-line" id="cancelL">إلغاء</button></div>
+      <div class="row"><button type="submit" class="btn btn-blue" id="saveL">حفظ</button><button type="button" class="btn btn-line" id="cancelL">إلغاء</button></div>
     </form>`;
-    const vh=()=>{const v=videoEmbed($('#fVid').value); $('#vidHint').textContent=!v?'حط لينك YouTube (ممكن يبقى Unlisted) أو لينك فيديو من Google Drive متشيّر لأي حد معاه اللينك.':v.kind==='yt'?'✓ فيديو YouTube':v.kind==='drive'?'✓ فيديو Google Drive (لازم يبقى متشيّر لأي حد معاه اللينك)':v.kind==='file'?'✓ ملف فيديو':'اللينك ده مش YouTube ولا Drive، هيظهر كلينك بس.';};
+    const vh=()=>{const v=videoEmbed($('#fVid').value); $('#vidHint').textContent=!v?'حط لينك YouTube (ممكن يبقى Unlisted) أو لينك من Google Drive، أو ارفع ملف من جهازك.':v.kind==='yt'?'✓ YouTube':v.kind==='drive'?'✓ ملف Google Drive':v.kind==='file'?'✓ ملف':'اللينك ده مش YouTube ولا Drive، هيظهر كلينك بس.';};
     $('#fVid').oninput=vh; vh();
-    $('#addQ').onclick=()=>{ sync(); L.questions.push(blankQ()); draw(); pane.querySelector('.qcard:last-child textarea').focus(); };
+    $('#fSec').onchange=()=>{ sync(); draw(); };
+    const upload=async(blob,name)=>{
+      if(blob.size>MAX_UPLOAD) throw 'الملف أكبر من 18 ميجا. صغّره أو ارفعه على YouTube';
+      $('#upSt').textContent='جاري الرفع… استنى';
+      const data=await blobToB64(blob);
+      const r=await api('adminUploadMedia',S.admin.pw,{name,mime:blob.type||'audio/webm',data});
+      $('#fVid').value=r.url; vh(); $('#upSt').textContent='✓ اترفع. متنساش تدوس «حفظ»';
+    };
+    $('#fUp').onchange=async e=>{ const f=e.target.files[0]; if(!f) return;
+      try{ await upload(f, f.name); }catch(err){ $('#upSt').textContent=String(err); } e.target.value=''; };
+    const rb=$('#fRecBtn'); if(rb) rb.onclick=()=>{ rb.hidden=true;
+      mountRecorder($('#fRec'),{startLabel:'ابدأ تسجيل اللحن', doneLabel:'✓ استخدم التسجيل ده', onSubmit:async(blob)=>{
+        await upload(blob,'لحن - '+($('#fTitle').value||'تسجيل')+'.'+(/mp4/.test(blob.type)?'m4a':'webm')); $('#fRec').innerHTML=''; rb.hidden=false; }}); };
+    const aq=$('#addQ'); if(aq) aq.onclick=()=>{ sync(); L.questions.push(blankQ()); draw(); pane.querySelector('.qcard:last-child textarea').focus(); };
     pane.querySelectorAll('[data-rq]').forEach(b=>b.onclick=()=>{ sync(); L.questions.splice(Number(b.dataset.rq),1); draw(); });
     $('#cancelL').onclick=()=>showAdmin('lessons');
     $('#lform').onsubmit=async e=>{ e.preventDefault(); sync();
       const err=validate(); if(err){ $('#ferr').textContent=err; return; }
       $('#saveL').disabled=true; $('#saveL').textContent='جاري الحفظ…';
-      try{ await adminCall('adminSaveLesson',L); toast('اتحفظ الدرس'); showAdmin('lessons'); }
-      catch(e2){ $('#ferr').textContent=e2; $('#saveL').disabled=false; $('#saveL').textContent='حفظ الدرس'; } };
+      const payload={...L, questions:L.section===RECITE?[]:L.questions};
+      try{ await adminCall('adminSaveLesson',payload); toast('اتحفظ'); showAdmin('lessons'); }
+      catch(e2){ $('#ferr').textContent=e2; $('#saveL').disabled=false; $('#saveL').textContent='حفظ'; } };
   };
   const sync=()=>{
     L.section=$('#fSec').value; L.title=$('#fTitle').value.trim(); L.videoUrl=$('#fVid').value.trim(); L.description=$('#fDesc').value.trim(); L.active=$('#fAct').checked;
+    if(!$('#q0')) return;
     L.questions.forEach((q,i)=>{ q.question=$('#q'+i).value.trim(); q.videoUrl=$('#qv'+i).value.trim(); q.raw=q.raw.map((_,j)=>$('#o'+i+'_'+j).value.trim());
       const c=pane.querySelector(`input[name="c${i}"]:checked`); q.correctN=c?Number(c.value):1; });
   };
   const validate=()=>{
-    if(!L.title) return 'اكتب اسم الدرس.';
+    if(!L.title) return 'اكتب الاسم.';
+    if(L.section===RECITE) return '';
     for(let i=0;i<L.questions.length;i++){ const q=L.questions[i];
       if(!q.question) return `سؤال ${i+1}: اكتب نص السؤال.`;
       if(q.raw.filter(Boolean).length<2) return `سؤال ${i+1}: محتاج اختيارين على الأقل.`;
@@ -696,22 +1006,38 @@ function editLesson(l){
 
 /* --- kids --- */
 function paneKids(d){
-  const active=d.kids.filter(k=>k.active===true||String(k.active).toLowerCase()==='true');
+  const active=activeKids(d);
   $('#pane').innerHTML=`<div class="view">
     <form class="card view" id="kform" style="gap:12px">
-      <h3 style="color:var(--blue)">إضافة أسماء</h3>
+      <h3 style="color:var(--blue)">إضافة أطفال</h3>
       <div class="grid2"><div class="field"><label for="kNames">الأسماء (كل اسم في سطر)</label><textarea class="inp" id="kNames" placeholder="مينا عادل&#10;كيرلس مجدي"></textarea></div>
         <div class="field"><label for="kCls">الفصل</label><select class="inp" id="kCls">${CLASSES.map(c=>`<option>${c}</option>`).join('')}</select>
-        <span class="hint">ممكن تلزق قايمة الأسماء كلها مرة واحدة.</span></div></div>
-      <button class="btn btn-blue" type="submit" style="align-self:flex-start">إضافة</button></form>
-    ${CLASSES.map(c=>{const ks=active.filter(k=>k.class===c).sort((a,b)=>String(a.name).localeCompare(String(b.name),'ar'));
+        <span class="hint">ممكن تلزق قايمة الأسماء كلها مرة واحدة. الأسماء المكررة مش بتتضاف تاني.</span></div></div>
+      <button class="btn btn-blue" type="submit" id="kAdd" style="align-self:flex-start">إضافة</button></form>
+    ${CLASSES.map(c=>{const ks=active.filter(k=>k.class===c);
       return `<div class="card view" style="gap:10px"><h3 style="color:var(--blue)">${c} <span class="hint">(${ks.length})</span></h3>
-      ${ks.length?`<div class="alist">${ks.map(k=>`<div class="aitem"><span class="grow">${esc(k.name)}</span><button type="button" class="mini del" data-rk="${esc(k.id)}">شيل</button></div>`).join('')}</div>`:'<p class="muted" style="margin:0">مفيش أسماء.</p>'}</div>`}).join('')}
+      ${ks.length?`<div class="alist">${ks.map(k=>`<div class="aitem" data-row="${esc(k.id)}"><span class="grow">${esc(k.name)}</span><button type="button" class="mini" data-ek="${esc(k.id)}">تعديل</button><button type="button" class="mini del" data-rk="${esc(k.id)}">شيل</button></div>`).join('')}</div>`:'<p class="muted" style="margin:0">مفيش أسماء.</p>'}</div>`}).join('')}
   </div>`;
   $('#kform').onsubmit=async e=>{ e.preventDefault();
     const names=$('#kNames').value.split(/\n|،|,/).map(s=>s.trim()).filter(Boolean);
     if(!names.length){ toast('اكتب اسم واحد على الأقل'); return; }
-    try{ await adminCall('adminAddKids',names,$('#kCls').value); toast(`اتضاف ${names.length} اسم`); showAdmin('kids'); }catch(err){ toast(err); } };
+    $('#kAdd').disabled=true;
+    try{ const before=activeKids(S.admin.data).length; await adminCall('adminAddKids',names,$('#kCls').value);
+      toast(`اتضاف ${activeKids(S.admin.data).length-before} اسم`); showAdmin('kids'); }catch(err){ toast(err); $('#kAdd').disabled=false; } };
+  $('#pane').querySelectorAll('[data-ek]').forEach(b=>b.onclick=()=>{
+    const k=active.find(x=>x.id===b.dataset.ek), row=b.closest('.aitem');
+    row.innerHTML=`<input class="inp grow" id="en_${esc(k.id)}" value="${esc(k.name)}" aria-label="الاسم">
+      <select class="inp" id="ec_${esc(k.id)}" style="width:auto">${CLASSES.map(c=>`<option ${c===k.class?'selected':''}>${c}</option>`).join('')}</select>
+      <button type="button" class="mini" data-sv>حفظ</button><button type="button" class="mini del" data-cn>إلغاء</button>`;
+    const inp=row.querySelector('input'); inp.focus(); inp.select();
+    row.querySelector('[data-cn]').onclick=()=>showAdmin('kids');
+    const save=async()=>{ const nm=inp.value.trim(); if(!nm){ toast('اكتب الاسم'); return; }
+      row.querySelector('[data-sv]').disabled=true;
+      try{ await adminCall('adminUpdateKid',k.id,nm,row.querySelector('select').value); toast('اتعدّل الاسم'); showAdmin('kids'); }
+      catch(e){ toast(e); row.querySelector('[data-sv]').disabled=false; } };
+    row.querySelector('[data-sv]').onclick=save;
+    inp.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); save(); } };
+  });
   $('#pane').querySelectorAll('[data-rk]').forEach(b=>twoStep(b,'متأكد؟',async()=>{
     try{ await adminCall('adminRemoveKid',b.dataset.rk); toast('اتشال الاسم (نتايجه القديمة محفوظة)'); showAdmin('kids'); }catch(e){ toast(e); } }));
 }
@@ -721,41 +1047,53 @@ function paneResults(d){
   const f=S.admin.rf||(S.admin.rf={sec:'all',cls:'الكل',q:''});
   const draw=()=>{
     const rows=d.results.filter(r=>(f.sec==='all'||r.section===f.sec)&&(f.cls==='الكل'||r.class===f.cls)&&(!f.q||String(r.kidName).includes(f.q)||String(r.lessonTitle).includes(f.q)));
+    const quiz=d.results.filter(r=>r.section!==RECITE);
     const kids=new Set(d.results.map(r=>r.kidId)).size;
-    const avg=d.results.length?Math.round(d.results.reduce((a,r)=>a+(r.total?r.score/r.total:0),0)/d.results.length*100):0;
-    const fmt=t=>{const x=new Date(t); return isNaN(x)?'':x.toLocaleDateString('ar-EG',{day:'numeric',month:'short'})+' '+x.toLocaleTimeString('ar-EG',{hour:'numeric',minute:'2-digit'});};
+    const avg=quiz.length?Math.round(quiz.reduce((a,r)=>a+(r.total?r.score/r.total:0),0)/quiz.length*100):0;
     $('#pane').innerHTML=`<div class="view">
-      <div class="stats"><div class="stat"><b>${d.results.length}</b><span>مرة حل درس</span></div><div class="stat"><b>${kids}</b><span>طفل جاوب</span></div><div class="stat"><b>${avg}%</b><span>متوسط الإجابات الصح</span></div></div>
+      <div class="stats"><div class="stat"><b>${d.results.length}</b><span>مرة حل درس أو سمّع</span></div><div class="stat"><b>${kids}</b><span>طفل شارك</span></div><div class="stat"><b>${avg}%</b><span>متوسط الإجابات الصح</span></div></div>
       <div class="card view" style="gap:12px">
-        <div class="row" style="justify-content:space-between"><h3 style="color:var(--blue)">كل الإجابات</h3>
+        <div class="row" style="justify-content:space-between"><h3 style="color:var(--blue)">كل النتايج</h3>
           <div class="row">${d.xlsxUrl?`<a class="btn btn-red" href="${esc(d.xlsxUrl)}" target="_blank" rel="noopener">⬇ تنزيل Excel</a><a class="btn btn-line" href="${esc(d.sheetUrl)}" target="_blank" rel="noopener">فتح الشيت</a>`:'<span class="hint">زرار تنزيل Excel بيظهر في الموقع الحقيقي</span>'}</div></div>
         <div class="row"><select class="inp" id="rSec" style="width:auto"><option value="all">كل الأقسام</option>${SECTIONS.map(s=>`<option value="${esc(s.key)}" ${f.sec===s.key?'selected':''}>${s.title}</option>`).join('')}</select>
           <select class="inp" id="rCls" style="width:auto"><option>الكل</option>${CLASSES.map(c=>`<option ${f.cls===c?'selected':''}>${c}</option>`).join('')}</select>
           <input class="inp" id="rQ" placeholder="دوّر باسم طفل أو درس" value="${esc(f.q)}" style="flex:1;min-width:160px"></div>
         <div class="tbl"><table class="res"><thead><tr><th>الوقت</th><th>الاسم</th><th>الفصل</th><th>القسم</th><th>الدرس</th><th>الدرجة</th></tr></thead><tbody>
-          ${rows.length?rows.map(r=>`<tr><td>${fmt(r.timestamp)}</td><td>${esc(r.kidName)}</td><td>${esc(r.class)}</td><td>${esc(SECTIONS.find(s=>s.key===r.section)?.title||r.section)}</td><td>${esc(r.lessonTitle)}</td><td><b>${r.score}</b> / ${r.total}</td></tr>`).join(''):'<tr><td colspan="6" class="empty">مفيش نتايج.</td></tr>'}
+          ${rows.length?rows.map(r=>`<tr><td>${fmtTime(r.timestamp)}</td><td>${esc(r.kidName)}</td><td>${esc(r.class)}</td><td>${esc(secTitle(r.section))}</td><td>${esc(r.lessonTitle)}</td><td>${r.section===RECITE?'🎙 سمّع':`<b>${r.score}</b> / ${r.total}`}</td></tr>`).join(''):'<tr><td colspan="6" class="empty">مفيش نتايج.</td></tr>'}
         </tbody></table></div>
-        <p class="hint" style="margin:0">تفاصيل كل سؤال (الطفل اختار إيه والصح كان إيه) موجودة في صفحة «Answers» جوه الشيت.</p>
+        <p class="hint" style="margin:0">تفاصيل كل سؤال موجودة في صفحة «Answers»، ونقط الحصة في صفحة «Bonus» جوه الشيت.</p>
       </div></div>`;
     $('#rSec').onchange=e=>{f.sec=e.target.value;draw();};
     $('#rCls').onchange=e=>{f.cls=e.target.value;draw();};
     $('#rQ').oninput=e=>{f.q=e.target.value; clearTimeout(f.t); f.t=setTimeout(()=>{draw(); const i=$('#rQ'); i.focus(); i.setSelectionRange(i.value.length,i.value.length);},350);};
   };
   draw();
-  adminCall('adminGetData').then(nd=>{ if(S.admin&&S.admin.tab==='results'){ d=nd; draw(); } }).catch(()=>{});
 }
 
 /* --- settings --- */
 function paneSettings(d){
-  const R=d.rules||{solve:5,correct:0,full:0};
+  const R=d.rules||{solve:5,correct:0,full:0,recite:15};
+  const cats=(d.cats||[]).map(c=>({...c}));
+  const drawCats=()=>{
+    $('#catRows').innerHTML=cats.map((c,i)=>`<div class="optrow"><input class="inp" data-cn="${i}" value="${esc(c.name)}" placeholder="مثلاً: حضور القداس"><input class="inp" data-cp="${i}" type="number" step="1" value="${esc(c.points)}" style="max-width:110px"><button type="button" class="mini del" data-cx="${i}">شيل</button></div>`).join('')||'<p class="muted" style="margin:0">مفيش أنواع.</p>';
+    $('#catRows').querySelectorAll('[data-cn]').forEach(x=>x.oninput=()=>{ cats[x.dataset.cn].name=x.value; });
+    $('#catRows').querySelectorAll('[data-cp]').forEach(x=>x.oninput=()=>{ cats[x.dataset.cp].points=x.value; });
+    $('#catRows').querySelectorAll('[data-cx]').forEach(x=>x.onclick=()=>{ cats.splice(Number(x.dataset.cx),1); drawCats(); });
+  };
   $('#pane').innerHTML=`<div class="view">
+  <form class="card view" id="catf" style="gap:12px">
+    <h3 style="color:var(--blue)">أنواع نقط الحصة</h3>
+    <p class="hint" style="margin:0">دي الأزرار اللي بتظهرلك في «نقط الحصة»، وبتظهر للأطفال فوق لوحة الأبطال.</p>
+    <div class="view" style="gap:8px" id="catRows"></div>
+    <div class="row"><button type="button" class="btn btn-soft" id="catAdd">+ نوع جديد</button><button type="submit" class="btn btn-red">حفظ الأنواع</button></div></form>
   <form class="card view" id="ptf" style="gap:14px">
-    <h3 style="color:var(--blue)">نظام النقط</h3>
-    <p class="hint" style="margin:0">كل درس بيتحسب للطفل مرة واحدة بس، من أحسن محاولة ليه. لو غيّرت الأرقام، لوحة الأبطال كلها بتتحسب من جديد.</p>
-    <div class="stats">
-      <div class="field"><label for="pSolve">نقط حل الدرس</label><input class="inp" id="pSolve" type="number" min="0" step="1" value="${R.solve}"><span class="hint">بياخدها أي طفل يخلّص الدرس</span></div>
-      <div class="field"><label for="pCorrect">نقط كل إجابة صح</label><input class="inp" id="pCorrect" type="number" min="0" step="1" value="${R.correct}"><span class="hint">0 يعني الإجابات الصح مش بتزوّد نقط</span></div>
-      <div class="field"><label for="pFull">بونص الدرجة النهائية</label><input class="inp" id="pFull" type="number" min="0" step="1" value="${R.full}"><span class="hint">لو جاوب كل الأسئلة صح</span></div>
+    <h3 style="color:var(--blue)">نقط الدروس والألحان</h3>
+    <p class="hint" style="margin:0">كل درس أو لحن بيتحسب للطفل مرة واحدة بس. لو غيّرت الأرقام، لوحة الأبطال كلها بتتحسب من جديد.</p>
+    <div class="stats stats4">
+      <div class="field"><label for="pSolve">نقط حل الدرس</label><input class="inp" id="pSolve" type="number" min="0" step="1" value="${R.solve}"><span class="hint">لأي طفل يخلّص الأسئلة</span></div>
+      <div class="field"><label for="pCorrect">نقط كل إجابة صح</label><input class="inp" id="pCorrect" type="number" min="0" step="1" value="${R.correct}"><span class="hint">0 = مش بتزوّد</span></div>
+      <div class="field"><label for="pFull">بونص الدرجة النهائية</label><input class="inp" id="pFull" type="number" min="0" step="1" value="${R.full}"><span class="hint">لو كل الأسئلة صح</span></div>
+      <div class="field"><label for="pRecite">نقط تسميع اللحن</label><input class="inp" id="pRecite" type="number" min="0" step="1" value="${R.recite??15}"><span class="hint">لما يدوس «خلصت التسميع»</span></div>
     </div>
     <p class="hint" style="margin:0" id="pEx"></p>
     <button class="btn btn-red" type="submit" style="align-self:flex-start">حفظ نظام النقط</button></form>
@@ -765,9 +1103,14 @@ function paneSettings(d){
     <div class="field"><label for="np2">اكتبها تاني</label><input class="inp" id="np2" type="password" autocomplete="new-password"></div>
     <div id="perr" style="color:var(--red)"></div>
     <button class="btn btn-blue" type="submit" style="align-self:flex-start">حفظ</button></form></div>`;
-  const val=()=>({solve:Math.max(0,Math.round(+$('#pSolve').value||0)),correct:Math.max(0,Math.round(+$('#pCorrect').value||0)),full:Math.max(0,Math.round(+$('#pFull').value||0))});
-  const ex=()=>{const r=val(); $('#pEx').textContent=`مثال: درس فيه 5 أسئلة، الطفل جاوب 4 صح ← ياخد ${nq(lessonPoints(r,4,5))}. لو جاوب الـ5 صح ← ${nq(lessonPoints(r,5,5))}.`;};
-  ['pSolve','pCorrect','pFull'].forEach(id=>$('#'+id).oninput=ex); ex();
+  drawCats();
+  $('#catAdd').onclick=()=>{ cats.push({name:'',points:5}); drawCats(); $('#catRows').querySelector('.optrow:last-child input').focus(); };
+  $('#catf').onsubmit=async e=>{ e.preventDefault();
+    const clean=cats.map(c=>({name:String(c.name||'').trim(),points:Math.round(Number(c.points)||0)})).filter(c=>c.name&&c.points);
+    try{ await adminCall('adminSaveCategories',clean); S.admin.bf=null; toast('اتحفظت الأنواع'); showAdmin('settings'); }catch(err){ toast(err); } };
+  const val=()=>({solve:Math.max(0,Math.round(+$('#pSolve').value||0)),correct:Math.max(0,Math.round(+$('#pCorrect').value||0)),full:Math.max(0,Math.round(+$('#pFull').value||0)),recite:Math.max(0,Math.round(+$('#pRecite').value||0))});
+  const ex=()=>{const r=val(); $('#pEx').textContent=`مثال: درس فيه 5 أسئلة، الطفل جاوب 4 صح ← ياخد ${nq(lessonPoints(r,4,5))}. لو جاوب الـ5 صح ← ${nq(lessonPoints(r,5,5))}. تسميع لحن ← ${nq(r.recite)}.`;};
+  ['pSolve','pCorrect','pFull','pRecite'].forEach(id=>$('#'+id).oninput=ex); ex();
   $('#ptf').onsubmit=async e=>{ e.preventDefault();
     try{ await adminCall('adminSavePoints',val()); toast('اتحفظ نظام النقط'); }catch(err){ toast(err); } };
   $('#pf').onsubmit=async e=>{ e.preventDefault(); const a=$('#np1').value,b=$('#np2').value;
@@ -777,6 +1120,7 @@ function paneSettings(d){
 }
 
 boot();
+
 </script>
 
 </html>
